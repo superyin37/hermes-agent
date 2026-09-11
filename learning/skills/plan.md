@@ -1,6 +1,8 @@
 # Hermes Skills 系统学习计划
 
-配套记录：[skills-learning.md](skills-learning.md)。
+返回[学习总览](../README.md)。
+
+配套记录：[notes.md](notes.md)。
 
 编写日期：2026-09-11。代码核对基线：`26350357d7`。本计划以本地 Python CLI 为主线；函数位置可能随仓库更新移动，优先按函数名搜索。文中的实验供后续学习执行，创建本文不代表实验已经完成。
 
@@ -51,7 +53,7 @@ python -c 'import yaml, dotenv, rich; print("基础依赖可导入")'
 
 编写本文时，当前 shell 未发现仓库内 `.venv/` 或 `venv/`；系统 Python 有 `yaml`，但缺少 `dotenv` 和 `pytest`。这不代表机器上没有其他可用环境，也不代表后续实验已能直接运行。
 
-如果缺少开发环境，先按 [README 的开发环境说明](README.md)准备。已有 `uv` 时，可以采用仓库外的专用环境：
+如果缺少开发环境，先按 [README 的开发环境说明](../../README.md)准备。已有 `uv` 时，可以采用仓库外的专用环境：
 
 ```bash
 uv venv ~/.hermes/venvs/hermes-skills-learning --python 3.11
@@ -175,7 +177,7 @@ rg -n '^def (parse_frontmatter|get_all_skills_dirs|get_scan_ordered_skills_dirs)
 rg -n '^def (scan_skill_commands|get_skill_commands)' agent/skill_commands.py
 ```
 
-依次阅读 [skill_utils.py](agent/skill_utils.py) 的解析和目录函数，再读 [skill_commands.py](agent/skill_commands.py) 的 `scan_skill_commands()`。对每个函数只先记录输入、返回值、直接调用者和过滤条件。
+依次阅读 [skill_utils.py](../../agent/skill_utils.py) 的解析和目录函数，再读 [skill_commands.py](../../agent/skill_commands.py) 的 `scan_skill_commands()`。对每个函数只先记录输入、返回值、直接调用者和过滤条件。
 
 ### 2.2 打印真实数据
 
@@ -240,7 +242,7 @@ PY
 
 ### 3.2 沿调用关系阅读
 
-在 [skill_commands.py](agent/skill_commands.py) 中依次阅读：
+在 [skill_commands.py](../../agent/skill_commands.py) 中依次阅读：
 
 ```text
 build_skill_invocation_message()
@@ -259,7 +261,7 @@ rg -n 'build_skill_invocation_message|_pending_input.put\(msg\)' cli.py
 rg -n '_pending_input.get|run_conversation\(' cli.py
 ```
 
-在 [cli.py](cli.py) 找到实际调用而不仅是导入包装器：查看返回的 `msg` 如何放进输入队列，再追踪队列读取、对话调用和用户消息追加位置。只沿这一条路径走，不通读整个 CLI。
+在 [cli.py](../../cli.py) 找到实际调用而不仅是导入包装器：查看返回的 `msg` 如何放进输入队列，再追踪队列读取、对话调用和用户消息追加位置。只沿这一条路径走，不通读整个 CLI。
 
 如果需要调试，在 IDE 给 `build_skill_invocation_message()` 的返回前、CLI 放入队列处和对话入口各设一个断点。使用阶段 0 的同一 Python 环境，启动模块 `hermes_cli.main`，参数为 `chat`；工作目录设为实验 `work`，环境变量设置 `HERMES_HOME` 和指向仓库的 `PYTHONPATH`。
 
@@ -288,9 +290,9 @@ print(payload.get("content", payload))
 PY
 ```
 
-这是索引构造函数的直接输出，不等同于某次真实 API 请求的完整系统提示词。查阅 [prompt_builder.py](agent/prompt_builder.py) 的调用处，才能确认它怎样被装配进会话。
+这是索引构造函数的直接输出，不等同于某次真实 API 请求的完整系统提示词。查阅 [prompt_builder.py](../../agent/prompt_builder.py) 的调用处，才能确认它怎样被装配进会话。
 
-然后查看 [skills_tool.py](tools/skills_tool.py) 中 `skills_list()`、`skill_view()` 的定义及底部注册代码。确认 `file_path` 的真实参数名；文档中的简写 `path` 不一定是可以直接发送的工具参数。
+然后查看 [skills_tool.py](../../tools/skills_tool.py) 中 `skills_list()`、`skill_view()` 的定义及底部注册代码。确认 `file_path` 的真实参数名；文档中的简写 `path` 不一定是可以直接发送的工具参数。
 
 ### 4.2 做两次真实对话
 
@@ -315,7 +317,7 @@ skills_lab_cli chat --toolsets skills,terminal --verbose
 | 正文如何进入对话？ | 展开后作为本轮用户消息的一部分 | 作为工具结果进入对话 |
 | 是否一定调用 `skills_list`？ | 不需要模型调用它 | 也不一定，需要实际观察 |
 
-把表中的代码事实与自己的运行证据对应起来。需要跟进工具分发时，只搜索 [model_tools.py](model_tools.py) 的 `handle_function_call()` 和 [run_agent.py](run_agent.py) 中相关调用及工具结果追加位置。
+把表中的代码事实与自己的运行证据对应起来。需要跟进工具分发时，只搜索 [model_tools.py](../../model_tools.py) 的 `handle_function_call()` 和 [run_agent.py](../../run_agent.py) 中相关调用及工具结果追加位置。
 
 **完成标准：** 能解释“知道有这个技能”和“已读完整正文”的区别，以及两条路径如何复用底层读取逻辑。
 
@@ -382,7 +384,7 @@ python "$HERMES_HOME/skills/learning/meeting-summary/scripts/count_lines.py" "$S
 
 ### 6.1 先观察公开工具接口
 
-在 [skill_manager_tool.py](tools/skill_manager_tool.py) 找到 `SKILL_MANAGE_SCHEMA`、底部 `registry.register()`、`skill_manage()` 和 `_skill_manage_batch()`。
+在 [skill_manager_tool.py](../../tools/skill_manager_tool.py) 找到 `SKILL_MANAGE_SCHEMA`、底部 `registry.register()`、`skill_manage()` 和 `_skill_manage_batch()`。
 
 先读 schema 再读 Python 函数：当前模型可见接口要求 `operations` 数组；Python 层仍保留旧的平铺参数用于兼容。这两者不能混为一谈。
 
@@ -424,8 +426,8 @@ diff -u "$SKILLS_LAB/evidence/skill-before-manage.md" "$HERMES_HOME/skills/learn
 
 主线只读代码，不要求现在安装外部技能：
 
-1. 在 [hermes_cli/skills_hub.py](hermes_cli/skills_hub.py) 找 `do_install()`，查看它如何取得来源、下载结果和扫描结果。
-2. 在 [tools/skills_hub.py](tools/skills_hub.py) 找 `UrlSource`，阅读 `SKILL.md` 与引用附属文件如何组成 bundle。
+1. 在 [hermes_cli/skills_hub.py](../../hermes_cli/skills_hub.py) 找 `do_install()`，查看它如何取得来源、下载结果和扫描结果。
+2. 在 [tools/skills_hub.py](../../tools/skills_hub.py) 找 `UrlSource`，阅读 `SKILL.md` 与引用附属文件如何组成 bundle。
 3. 找 `quarantine_bundle()`、`install_from_quarantine()`、`HubLockFile`，记录哪些步骤落盘、锁文件记录什么，以及失败如何阻止后续安装。
 4. 回到阶段 2，回答安装后的文件为什么能被扫描。下载代码无需自行“把技能注册进模型”。
 
@@ -433,7 +435,7 @@ diff -u "$SKILLS_LAB/evidence/skill-before-manage.md" "$HERMES_HOME/skills/learn
 
 ### 6.4 用已有测试理解行为约束
 
-从 [test_skill_commands.py](tests/agent/test_skill_commands.py) 选读 `test_uses_shared_skill_loader_for_secure_setup`、`test_supporting_file_hint_uses_file_path_argument`。分别写出它们的准备条件、触发动作、断言与 mock 的边界。
+从 [test_skill_commands.py](../../tests/agent/test_skill_commands.py) 选读 `test_uses_shared_skill_loader_for_secure_setup`、`test_supporting_file_hint_uses_file_path_argument`。分别写出它们的准备条件、触发动作、断言与 mock 的边界。
 
 如需运行，必须使用仓库测试入口：
 
@@ -441,7 +443,7 @@ diff -u "$SKILLS_LAB/evidence/skill-before-manage.md" "$HERMES_HOME/skills/learn
 scripts/run_tests.sh tests/agent/test_skill_commands.py -k 'uses_shared_skill_loader_for_secure_setup or supporting_file_hint_uses_file_path_argument'
 ```
 
-如果测试脚本未找到你的外部虚拟环境，先阅读 [scripts/run_tests.sh](scripts/run_tests.sh) 的解释器选择逻辑，再调整环境；不要改用裸 `pytest` 绕过仓库的隔离规则。测试通过是该行为的证据，不代表完成了真实模型对话验证。
+如果测试脚本未找到你的外部虚拟环境，先阅读 [scripts/run_tests.sh](../../scripts/run_tests.sh) 的解释器选择逻辑，再调整环境；不要改用裸 `pytest` 绕过仓库的隔离规则。测试通过是该行为的证据，不代表完成了真实模型对话验证。
 
 **完成标准：** 能解释手动编辑、`skill_manage`、Hub 安装最终如何汇合到文件发现路径，并区分模型公开接口、内部兼容函数和用户 CLI 命令。
 
@@ -470,4 +472,4 @@ scripts/run_tests.sh tests/agent/test_skill_commands.py -k 'uses_shared_skill_lo
 
 之后按兴趣补读条件激活、外部目录与同名优先级、技能组合、密钥配置、模板与 inline shell、缓存和 Curator。每次仍选择一个问题、一条实际路径和一个小实验。
 
-与助手继续学习时，可直接说：“我们开始阶段 2，只带我做 2.1 和 2.2；先让我预测结果，再解释代码。”完成后说：“请根据本次对话更新 skills-learning.md，保留我的原始猜测，把代码结论与实际运行结果分开，未做的实验保持未完成。”
+与助手继续学习时，可直接说：“我们开始阶段 2，只带我做 2.1 和 2.2；先让我预测结果，再解释代码。”完成后说：“请根据本次对话更新 learning/skills/notes.md，保留我的原始猜测，把代码结论与实际运行结果分开，未做的实验保持未完成。”
