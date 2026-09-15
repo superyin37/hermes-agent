@@ -311,6 +311,21 @@ shell 语法：`PYTHONPATH="..." python -m hermes_cli.main` 是给单次 `python
 - **现在我会怎样解释：** 临时导出让源码位置、实验数据位置和运行目录彼此独立，并避免实验用 `HERMES_HOME` 泄漏到日常 Hermes 会话。新终端需要使用已记录的真实路径显式恢复；若临时目录消失，则创建新实验目录。
 - **下一步最小动作：** 用自己的话区分源码目录、Python 解释器、`HERMES_HOME` 和聊天工作目录，再进入阶段 1.1。
 
+### 2026-09-15 / 阶段 0 / `PATH`、解释器与 `PYTHONPATH` 的混乱和最终理解
+
+- **今天只解决什么：** 弄清虚拟环境、Python 解释器、`PATH`、`PYTHONPATH`、`sys.path` 和 `SKILLS_REPO` 在启动命令中各自处于哪一层。
+- **核心的初始混乱：** 一开始没有分清 `PATH` 和 `PYTHONPATH`，把它们都理解成了某种“Python 的路径”。因此看到“虚拟环境已激活，所以实际启动的是 `~/.hermes/venvs/hermes-skills-learning/bin/python`”时，会拿这个解释器路径与指向源码仓库的 `PYTHONPATH` 对照，并因为二者不一致而无法理解解释器路径从哪里来。
+- **由此产生的追问：** “这个 Python 的路径是什么时候被设置的？”“它和 `PYTHONPATH` 是什么关系？”“给这个 Python 进程设置 `PYTHONPATH` 又是什么意思？”后来又观察到启动函数写了 `PYTHONPATH=... python -m hermes_cli.main`，但函数结束后在当前终端执行 `echo "$PYTHONPATH"` 没有输出，使这个疑问更加具体。
+- **中间的表述障碍：** 把 Python 解释器和 `SKILLS_REPO` 直接拿来比较时，感觉二者一个是程序、一个是保存路径的变量，本来就不是同类对象，因此“二者在启动时有什么区别”也难以回答。
+- **解开混乱的关键：** 完整回答先区分两个名字相似但作用不同的变量，再把启动过程拆成两个查找阶段。Shell 先根据 `PATH` 找到要启动的 `python` 可执行文件；Python 启动后，再根据 `sys.path` 查找 `hermes_cli.main`，而命令收到的 `PYTHONPATH` 会成为 `sys.path` 的来源之一。解释器路径不需要、也不应该与 `PYTHONPATH` 相符。
+- **虚拟环境的作用：** `source <venv>/bin/activate` 把虚拟环境的 `bin` 放到当前 shell 的 `PATH` 前面，所以输入 `python` 时，Shell 先找到学习虚拟环境的解释器。该解释器决定 Python 版本以及默认使用的标准库和 `site-packages` 依赖。
+- **`SKILLS_REPO` 的作用：** 它只是实验自定义的路径变量，本身对 Shell、Python 和 Hermes 都没有特殊语义。启动函数把它拼进命令级 `PYTHONPATH` 后，它才帮助解释器从当前 checkout 查找 Hermes 模块。
+- **命令级环境变量的作用域：** `变量=值 命令` 只把该值交给这一次命令及其子进程，不修改父 shell。因此 Python 进程内部可以读取 `PYTHONPATH`，进程结束后父 shell 中的 `echo "$PYTHONPATH"` 仍然为空；函数使用圆括号创建子 shell，又进一步阻止内部环境变化回写父 shell。
+- **最终理解：** `PATH` 回答“Shell 启动哪个 Python”；解释器回答“谁执行代码、使用哪个 Python 版本和依赖”；`PYTHONPATH` 回答“给这个 Python 增加哪些模块搜索目录”；`sys.path` 是 Python 实际使用的模块搜索路径集合；`SKILLS_REPO` 是被启动函数放进 `PYTHONPATH` 的源码目录值。
+- **实际运行证据：** `sys.executable` 已显示 `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning/bin/python`；`skills_lab_cli chat --help` 正常显示；父 shell 中 `echo "$PYTHONPATH"` 没有输出。附带文字中的进程内 `PYTHONPATH` / `sys.path` 打印命令是解释和后续复现实验，本次没有报告其实际输出。
+- **理解变化：** 真正的转折点不是单独记住每个变量的定义，而是看清“激活虚拟环境修改 `PATH` → Shell 选择解释器 → 命令给该进程临时传入 `PYTHONPATH` → Python 通过 `sys.path` 查找模块”的完整顺序。用户在读完这段完整解释后，明确表示“总算理解了这部分内容”。
+- **下一步最小动作：** 进入阶段 1.1，在隔离的 `HERMES_HOME` 中创建 `meeting-summary` 最小技能。
+
 ### 2026-09-15 / 概念澄清 / “当前没有系统级长期记忆接口”是什么意思
 
 - **今天只解决什么：** 区分当前 Codex 对话宿主、Hermes Agent 的长期记忆机制，以及项目笔记文件这三个层次。
@@ -367,4 +382,4 @@ shell 语法：`PYTHONPATH="..." python -m hermes_cli.main` 是给单次 `python
 | 日期 | 更新内容 | 依据 |
 | --- | --- | --- |
 | 2026-09-11 | 创建学习记录框架，所有学习阶段保持未开始 | 用户请求；尚未执行学习实验 |
-| 2026-09-15 | 完成阶段 0.1～0.3，记录环境证据、环境变量与命令级 `PYTHONPATH` 的作用域、最小配置文件、CLI 帮助入口验证、四类路径自检及问题表述修正；加入有长期学习价值时自动更新笔记的协作约定 | 用户实际命令输出、自检回答、本次问答与源码阅读 |
+| 2026-09-15 | 完成阶段 0.1～0.3，记录环境证据、`PATH → 解释器 → PYTHONPATH/sys.path → 模块` 的混乱与最终理解、最小配置文件、CLI 帮助入口验证和四类路径自检；加入有长期学习价值时自动更新笔记的协作约定 | 用户实际命令输出、自检回答、附带总结文字、本次问答与源码阅读 |
