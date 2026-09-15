@@ -402,6 +402,18 @@ export function hiddenWindowsChildOptions(options = {}, isWindows = process.plat
 If the logic lives inline in a god-file and extraction feels disruptive, that is the signal to
 extract, not to regex around it.
 
+## Learning Notes Workflow
+
+When following a plan under `learning/`, read `learning/AGENTS.md` before the first
+learning-related response. After each substantive learning question and answer, and before
+advancing to the next step, decide whether the exchange has lasting learning value. If it does,
+update the relevant module's `notes.md` immediately. A request not to record a particular
+exchange affects note-taking only: still answer the question and complete any requested work.
+When editing `notes.md` or other human-facing learning documents, continuously preserve the
+clarity and readability of the whole document: place new material where it belongs, merge or
+reorganize existing material when needed, keep headings and terminology consistent, and avoid
+mechanical append-only updates, duplication, and fragmented notes.
+
 ## Routing Table — working in X → read X/AGENTS.md
 
 | Area | Read | Covers |
@@ -415,6 +427,7 @@ extract, not to regex around it.
 | `web/`, `hermes_cli/web_routers/` | `web/AGENTS.md` | Dashboard embeds the real TUI; what React may and may not rebuild |
 | `apps/desktop/` | `apps/desktop/AGENTS.md`, `apps/desktop/src/AGENTS.md` | Desktop judgment guide; `serve` backend, slash palette curation, Bot Mode canonical chat |
 | `skills/`, `optional-skills/`, `agent/curator*.py` | `skills/AGENTS.md` | Frontmatter, HARDLINE authoring standards, curator |
+| `learning/` | `learning/AGENTS.md` | Learning conversations, evidence tracking, and automatic notes updates |
 | `cron/`, kanban (`hermes_cli/kanban*.py`, `tools/kanban_tools.py`, `plugins/kanban/`) | `cron/AGENTS.md` | Scheduler invariants, job fields, kanban board/dispatcher |
 | `gateway/platforms/` new adapter | `gateway/platforms/ADDING_A_PLATFORM.md` | Step-by-step adapter guide |
 

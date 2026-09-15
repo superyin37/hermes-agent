@@ -13,13 +13,14 @@
 - 证据分为：**代码阅读、直接函数运行、真实模型对话、已有测试**。不同证据不能相互冒充。
 - 不清楚的内容写“待验证”；复制计划中的预期时注明“预期”，不要写成已观察结果。
 - 可以自己填写，也可以让助手根据对话更新。助手不应代替我认定“我已理解”，或把没有执行的实验勾为完成。
+- 每次学习问答结束、继续下一步之前，助手应判断本轮整体内容是否具有长期学习价值；有价值时立即记录到本文，并区分事实、运行证据和待验证推测，无需等待再次提醒。
 - 记录目录、模型名称和错误信息即可，不保存密钥、令牌或完整敏感配置。
 
 ## 当前进度
 
 | 阶段 | 状态 | 日期 | 证据位置 | 下一步 |
 | --- | --- | --- | --- | --- |
-| 0. 环境准备 | 未开始 | — | — | 确认 Python 与实验目录 |
+| 0. 环境准备 | 已完成（0.1～0.3 与自检） | 2026-09-15 | 本文“环境与复现信息”及“阶段 0 自检” | 进入 1.1，创建最小技能 |
 | 1. 最小技能 | 未开始 | — | — | 创建 meeting-summary |
 | 2. 发现与解析 | 未开始 | — | — | 观察元数据与命令条目 |
 | 3. 消息构造 | 未开始 | — | — | 保存实际展开的消息 |
@@ -51,18 +52,18 @@
 
 | 项目 | 本次实际值 |
 | --- | --- |
-| 学习日期 | 待填写 |
-| 实际源码提交 | 待填写，不能只沿用计划基线 |
-| 仓库绝对路径 / SKILLS_REPO | 待填写 |
-| Python 可执行文件与版本 | 待填写 |
-| 虚拟环境 | 待填写 |
-| SKILLS_LAB | 待填写 |
-| HERMES_HOME | 待填写 |
-| 实验工作目录 | 待填写 |
-| 使用界面 | 待填写，主线为 Python CLI |
+| 学习日期 | 2026-09-15 |
+| 实际源码提交 | `f58635bd62` |
+| 仓库绝对路径 / SKILLS_REPO | `/home/yin-hanyang/projects/hermes` |
+| Python 可执行文件与版本 | `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning/bin/python`；Python 3.11（小版本未记录） |
+| 虚拟环境 | `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning` |
+| SKILLS_LAB | `/tmp/hermes-skills-lab.YL4I5Y` |
+| HERMES_HOME | `/tmp/hermes-skills-lab.YL4I5Y/home` |
+| 实验工作目录 | `/tmp/hermes-skills-lab.YL4I5Y/work` |
+| 使用界面 | Python 经典 CLI；`skills_lab_cli chat --help` 已正常显示 |
 | 模型 / provider | 待填写，不记录密钥 |
 | 启用工具集 | 待填写 |
-| 证据保存目录 | 待填写 |
+| 证据保存目录 | `/tmp/hermes-skills-lab.YL4I5Y/evidence` |
 
 计划编写时的环境探测仅供参考：仓库内未发现 `.venv/` 或 `venv/`，系统 Python 缺少 `dotenv` 和 `pytest`。开始实验时应重新核对，不能据此推断机器上没有其他环境。
 
@@ -71,8 +72,89 @@
 记录实际使用的激活命令、变量恢复命令和启动方法。不要填入占位路径后直接执行。
 
 ```text
-待填写。
+cd /home/yin-hanyang/projects/hermes
+source ~/.hermes/venvs/hermes-skills-learning/bin/activate
+export SKILLS_REPO="/home/yin-hanyang/projects/hermes"
+export SKILLS_LAB="/tmp/hermes-skills-lab.YL4I5Y"
+export HERMES_HOME="$SKILLS_LAB/home"
+
+skills_lab_cli() (
+  cd "$SKILLS_LAB/work" || exit 1
+  PYTHONPATH="$SKILLS_REPO${PYTHONPATH:+:$PYTHONPATH}" \
+    python -m hermes_cli.main "$@"
+)
+
+skills_lab_cli chat --help
+
+以上变量和 skills_lab_cli 函数只在当前 shell 及其子进程中有效。
+新终端需要重新设置；若 /tmp 中的实验目录已被清理，则重新执行阶段 0.2，
+不能继续引用已经不存在的目录。
 ```
+
+### 为什么实验要创建最小 `config.yaml`
+
+我的问题是：阶段 0.2 中的配置依据什么写出；配置 Agent 是否必须先写这样的
+`config.yaml`。
+
+代码结论：`get_config_path()` 将配置文件定位为 `HERMES_HOME/config.yaml`；
+`load_config()` 先复制 `DEFAULT_CONFIG`，文件存在时才把用户配置深度合并进去。
+缺少配置文件是合法的首次运行状态，因此手写这份文件不是 Agent 启动或 Skills
+发现的必经步骤。正常使用通常由 `hermes setup` 和配置命令维护用户配置；本实验
+直接写文件，是为了建立小而明确、可复现的实验条件。
+
+| 实验配置 | 当前内置默认值 | 放进实验文件的目的 | 启动必需 |
+| --- | --- | --- | --- |
+| `skills.external_dirs: []` | `[]` | 明确不引入额外技能目录，减少发现来源 | 否 |
+| `skills.inline_shell: false` | `false` | 明确关闭技能正文中的 inline shell 预处理，只观察普通技能加载 | 否 |
+| `terminal.backend: local` | `local` | 明确使用本机终端后端，避免 Docker、SSH 等远端变量 | 否 |
+| `terminal.cwd: <实验 work>` | `.` | 表达实验工作目录；本地 CLI 实际会采用启动进程的当前目录，所以 `skills_lab_cli` 中的 `cd` 才是主线的直接保证 | 否 |
+| `display.interface: cli` | `cli` | 明确采用经典 CLI，减少 TUI 带来的路径差异；显式启动参数和 `HERMES_TUI` 仍可能覆盖它 | 否 |
+
+证据类型是代码阅读：默认值来自 `hermes_cli/config_defaults.py`；配置路径和合并行为
+来自 `hermes_cli/config.py`；本地 CLI 对工作目录的处理来自 `cli.py`。实际运行已经
+确认配置文件写入隔离目录；`skills_lab_cli chat --help` 随后正常显示，证明 CLI
+入口能使用专用解释器和当前仓库源码启动。帮助输出不会调用模型，因此它尚未证明
+provider 或真实聊天已配置成功。
+
+### 阶段 0 自检：四个位置的分工
+
+我的原始回答保留如下：
+
+1. `SKILLS_REPO` 是环境变量，指向原本的 Hermes 目录；后续通过 Python 执行 main、启动 Agent 等行为都要通过它去原本的 Hermes 目录执行。
+2. Python 解释器：不确定。
+3. `HERMES_HOME` 指向临时创建的 `SKILLS_LAB/home`，不是原来的 Hermes 目录，而是专为这次学习和测试创建；后续操作产生的临时结果都会放在这里。
+4. `$SKILLS_LAB/work` 指向实验的 work 目录，是这次学习中 CLI 的默认工作目录。
+
+校准后的边界：
+
+| 对象 | 它决定什么 | 不应扩大成什么 |
+| --- | --- | --- |
+| `SKILLS_REPO` | 当前 checkout 的源码根目录；实验函数把它放进 `PYTHONPATH`，让 Python 从这里导入 `hermes_cli.main` 等模块 | 不是所有命令和文件操作的执行目录 |
+| Python 解释器 | 哪个 Python 程序执行源码，以及使用哪个版本和哪套已安装依赖；当前是学习虚拟环境中的 Python 3.11 | 不决定 Hermes 源码、用户数据或相对路径的位置 |
+| `HERMES_HOME` | Hermes 管理的用户数据根目录，例如配置、实验技能、缓存和会话状态 | 不是所有临时结果的总目录；工作文件仍可写在 `work` 或显式指定的其他路径 |
+| `$SKILLS_LAB/work` | CLI 进程的当前工作目录，也是本地终端工具解析相对路径的基点 | 不是操作系统沙箱，绝对路径仍可指向目录之外 |
+
+对 `python -m hermes_cli.main` 这次启动，可以拆成四个互不替代的选择：shell 中的
+`python` 解析到学习虚拟环境的解释器；`PYTHONPATH=$SKILLS_REPO` 选择当前 checkout
+里的源码；`HERMES_HOME` 选择隔离的 Hermes 数据；函数中的 `cd` 选择相对路径的
+工作目录。
+
+我随后追问“Python 解释器和 `SKILLS_REPO` 在启动 Hermes 时有什么区别”，用户指出
+二者本来不是同类对象：解释器是执行 Python 的程序，`SKILLS_REPO` 是保存路径的
+环境变量。这个质疑正确，原问题把不同层次的对象硬作比较，表达不清。更准确的
+问题应是“启动命令分别怎样使用它们”：shell 执行虚拟环境中的 `python`；同时把
+`SKILLS_REPO` 的值放入该进程的 `PYTHONPATH`，供解释器查找 Hermes 模块。
+`SKILLS_REPO` 单独存在时没有 Python 或 Hermes 的特殊语义，是实验启动函数赋予了
+它这个用途。阶段 0 的完成只表示环境操作和区分对象的自检已经发生，不代替用户
+声称掌握了所有相关机制。
+
+后续实际观察：在函数外执行 `echo "$PYTHONPATH"` 没有输出。这符合启动函数使用的
+shell 语法：`PYTHONPATH="..." python -m hermes_cli.main` 是给单次 `python` 命令设置
+环境，而不是修改父 shell。Python 进程及其子进程能看到该值，命令结束后，当前
+终端原有的 `PYTHONPATH` 仍保持不变。函数外层的圆括号还会创建子 shell，因此即使
+函数内部另行修改或导出变量，也不会反向写回当前终端。验证时应在带有该临时赋值
+的 Python 进程内部打印 `os.environ["PYTHONPATH"]` 或模块的 `__file__`，不能用函数
+执行结束后的父 shell `echo` 判断该进程当时是否收到变量。
 
 ## 阶段 1：最小技能
 
@@ -216,6 +298,31 @@
 - **现在我会怎样解释：**
 - **下一步最小动作：**
 
+### 2026-09-15 / 阶段 0 / 实验环境变量为什么临时导出
+
+- **今天只解决什么：** 为什么用 `export SKILLS_REPO="$PWD"`，以及关闭终端后如何继续实验。
+- **操作前我的猜测：** 用户指出这些变量可能在重开 terminal 和会话后全部消失。
+- **读了哪些函数：** 本次没有阅读 Skills 源码；讨论的是 shell 环境变量机制和实验隔离约定。
+- **实际执行的步骤或命令：** 在仓库根目录导出 `SKILLS_REPO`、`SKILLS_LAB`、`HERMES_HOME`，随后由 Python 子进程打印出对应路径。
+- **原始输出或证据路径：** 源码目录为 `/home/yin-hanyang/projects/hermes`；实验目录为 `/tmp/hermes-skills-lab.YL4I5Y`；数据目录为 `/tmp/hermes-skills-lab.YL4I5Y/home`；工作目录为 `/tmp/hermes-skills-lab.YL4I5Y/work`。
+- **通用机制能确认什么：** `export` 使变量对当前 shell 启动的子进程可见；`SKILLS_REPO="$PWD"` 在赋值时保存当时的仓库路径，之后切换工作目录不会随之变化。关闭当前终端后，变量和 shell 函数不会自动出现在新终端。
+- **实验实际确认什么：** Python 子进程成功读取了三个导出的变量，且实验配置写入隔离的 `HERMES_HOME`。
+- **哪些仍只是推测：** 尚未实际重开终端验证恢复流程；`/tmp` 目录何时被系统清理由宿主环境决定。
+- **现在我会怎样解释：** 临时导出让源码位置、实验数据位置和运行目录彼此独立，并避免实验用 `HERMES_HOME` 泄漏到日常 Hermes 会话。新终端需要使用已记录的真实路径显式恢复；若临时目录消失，则创建新实验目录。
+- **下一步最小动作：** 用自己的话区分源码目录、Python 解释器、`HERMES_HOME` 和聊天工作目录，再进入阶段 1.1。
+
+### 2026-09-15 / 概念澄清 / “当前没有系统级长期记忆接口”是什么意思
+
+- **今天只解决什么：** 区分当前 Codex 对话宿主、Hermes Agent 的长期记忆机制，以及项目笔记文件这三个层次。
+- **操作前我的猜测：** “没有系统级长期记忆接口”可能会被理解成 Hermes 完全没有跨会话记忆。
+- **读了哪些函数：** `agent/memory_provider.py::MemoryProvider`、`agent/memory_manager.py::MemoryManager`、`agent/agent_init.py` 中内置记忆和外部 provider 的初始化路径、`agent/system_prompt.py::_memory_parts`、`agent/turn_context.py::_memory_turn_start_and_prefetch`、`agent/turn_finalizer.py` 的回合完成同步，以及 `tools/memory_tool.py::memory_tool`。
+- **实际执行的步骤或命令：** 只读检索并阅读上述源码和 `website/docs/developer-guide/memory-provider-plugin.md`；本次未运行 Hermes，也未调用真实 memory provider。
+- **本会话证据能确认什么：** 当前 Codex 宿主向助手提供的工具中没有独立的长期记忆读写工具；因此助手不能把信息写入一个由宿主自动跨会话召回的隐藏记忆库。项目文件（例如本文）仍可在获准后显式读写，但这是文件持久化，不是宿主级记忆服务。
+- **代码能确认什么：** 当前 Hermes 源码并非“没有长期记忆接口”。它有内置的 `MEMORY.md` / `USER.md` 文件记忆和模型侧 `memory` 工具，也有面向外部后端的 `MemoryProvider` ABC、`MemoryManager` 生命周期编排及插件发现/注册机制。外部 provider 可实现 `prefetch`、`sync_turn`、工具 schema 与工具调用等能力，并通过 `memory.provider` 单选启用。
+- **哪些仍只是推测：** 原句出现时“系统级”究竟特指 Codex 宿主、Hermes 核心，还是“任意 skill 都能直接调用的统一业务 API”，需要结合原句上下文确认；本次没有验证某个具体 provider 的网络端到端行为。
+- **现在我会怎样解释：** “系统级长期记忆接口”通常指由运行时统一拥有、可持久化、可跨会话检索并自动注入上下文的稳定契约，而不是把文字写进当前聊天或普通 Markdown。对当前 Codex 宿主来说，本会话没有暴露该接口；对 Hermes 来说，该契约已经存在，只是内置文件记忆与外部 provider 接口分成了两条路径。
+- **下一步最小动作：** 若目标是学习 Skills，继续阶段 0.3；若目标是扩展记忆，先用一个最小的目录式 `MemoryProvider` 插件验证 `register -> initialize -> sync_turn -> prefetch`，不要新增 core tool。
+
 ## 疑问清单
 
 | 编号 | 问题 | 当前猜测 | 需要什么证据 | 状态 |
@@ -260,3 +367,4 @@
 | 日期 | 更新内容 | 依据 |
 | --- | --- | --- |
 | 2026-09-11 | 创建学习记录框架，所有学习阶段保持未开始 | 用户请求；尚未执行学习实验 |
+| 2026-09-15 | 完成阶段 0.1～0.3，记录环境证据、环境变量与命令级 `PYTHONPATH` 的作用域、最小配置文件、CLI 帮助入口验证、四类路径自检及问题表述修正；加入有长期学习价值时自动更新笔记的协作约定 | 用户实际命令输出、自检回答、本次问答与源码阅读 |
