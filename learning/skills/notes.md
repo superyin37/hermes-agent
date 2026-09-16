@@ -20,9 +20,9 @@
 
 | 阶段 | 状态 | 日期 | 证据位置 | 下一步 |
 | --- | --- | --- | --- | --- |
-| 0. 环境准备 | 已完成（0.1～0.3 与自检） | 2026-09-15 | 本文“环境与复现信息”及“阶段 0 自检” | 进入 1.1，创建最小技能 |
-| 1. 最小技能 | 未开始 | — | — | 创建 meeting-summary |
-| 2. 发现与解析 | 未开始 | — | — | 观察元数据与命令条目 |
+| 0. 环境准备 | 已完成（0.1～0.3 与自检；已恢复新的临时实验目录） | 2026-09-15～2026-09-16 | 本文“环境与复现信息”及“阶段 0 自检” | 使用新路径继续阶段 1 |
+| 1. 最小技能 | 已完成（1.1～1.3 与自检） | 2026-09-16 | 实验 `SKILL.md`；会话 `20260916_172929_a2cd43`、`20260916_173136_64b59c` 与 `20260916_175614_8a8d7d`；本文 1.2～1.3 对照结果 | 进入阶段 2，追踪文件如何变成命令条目 |
+| 2. 发现与解析 | 进行中（即将开始 2.1） | 2026-09-16 | — | 阅读解析、目录与扫描函数 |
 | 3. 消息构造 | 未开始 | — | — | 保存实际展开的消息 |
 | 4. 主动加载 | 未开始 | — | — | 对比两条加载路径 |
 | 5. 附件与执行 | 未开始 | — | — | 读取附件并运行脚本 |
@@ -52,18 +52,18 @@
 
 | 项目 | 本次实际值 |
 | --- | --- |
-| 学习日期 | 2026-09-15 |
-| 实际源码提交 | `f58635bd62` |
+| 学习日期 | 2026-09-15～2026-09-16 |
+| 实际源码提交 | 最初 `f58635bd62`；当前 `d0fd9fa10d` |
 | 仓库绝对路径 / SKILLS_REPO | `/home/yin-hanyang/projects/hermes` |
-| Python 可执行文件与版本 | `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning/bin/python`；Python 3.11（小版本未记录） |
+| Python 可执行文件与版本 | `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning/bin/python`；Python 3.11.16 |
 | 虚拟环境 | `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning` |
-| SKILLS_LAB | `/tmp/hermes-skills-lab.YL4I5Y` |
-| HERMES_HOME | `/tmp/hermes-skills-lab.YL4I5Y/home` |
-| 实验工作目录 | `/tmp/hermes-skills-lab.YL4I5Y/work` |
+| SKILLS_LAB | 当前 `/tmp/hermes-skills-lab.VuNjyi`；原 `/tmp/hermes-skills-lab.YL4I5Y` 已被系统清理 |
+| HERMES_HOME | `/tmp/hermes-skills-lab.VuNjyi/home` |
+| 实验工作目录 | `/tmp/hermes-skills-lab.VuNjyi/work` |
 | 使用界面 | Python 经典 CLI；`skills_lab_cli chat --help` 已正常显示 |
-| 模型 / provider | 待填写，不记录密钥 |
-| 启用工具集 | 待填写 |
-| 证据保存目录 | `/tmp/hermes-skills-lab.YL4I5Y/evidence` |
+| 模型 / provider | `upstage/solar-pro4:free` / `nous`；2026-09-16 已在隔离配置中设为默认模型；reasoning effort 为 `xhigh`；不记录密钥 |
+| 启用工具集 | 1.2 尝试显式请求 `skills,terminal`，但 provider 检查失败后未进入 Agent 回合 |
+| 证据保存目录 | `/tmp/hermes-skills-lab.VuNjyi/evidence` |
 
 计划编写时的环境探测仅供参考：仓库内未发现 `.venv/` 或 `venv/`，系统 Python 缺少 `dotenv` 和 `pytest`。开始实验时应重新核对，不能据此推断机器上没有其他环境。
 
@@ -75,7 +75,7 @@
 cd /home/yin-hanyang/projects/hermes
 source ~/.hermes/venvs/hermes-skills-learning/bin/activate
 export SKILLS_REPO="/home/yin-hanyang/projects/hermes"
-export SKILLS_LAB="/tmp/hermes-skills-lab.YL4I5Y"
+export SKILLS_LAB="/tmp/hermes-skills-lab.VuNjyi"
 export HERMES_HOME="$SKILLS_LAB/home"
 
 skills_lab_cli() (
@@ -158,21 +158,25 @@ shell 语法：`PYTHONPATH="..." python -m hermes_cli.main` 是给单次 `python
 
 ## 阶段 1：最小技能
 
-- [ ] 已保存技能 v1。
-- [ ] 已记录普通请求是否主动加载技能。
-- [ ] 已完成一次显式斜杠调用。
-- [ ] 已修改为 v2，并在新会话观察结果。
+- [x] 已亲自核对技能 v1（文件最初由助手预置；用户已查看并解释 frontmatter 与正文的分工）。
+- [x] 已记录普通请求是否主动加载技能。
+- [x] 已完成一次显式斜杠调用。
+- [x] 已修改为 v2，并在新会话观察结果。
 
 | 项目 | 我的记录 |
 | --- | --- |
-| 操作前的预测 | 待填写 |
-| 固定的会议原文 | 待填写 |
-| v1/v2 的文件差异 | 待填写 |
-| 两次输出的关键差异 | 待填写 |
-| 实际出现的工具调用 | 待填写 |
-| 哪些是规则，哪些是输入事实 | 待填写 |
+| 操作前的预测 | 显式 `/meeting-summary` 应出现三个标题，明确记录原文中已有的日期或截止时间，并把缺失日期标记为“未说明”；普通请求对这三点均没有保证 |
+| 固定的会议原文 | “今天决定先修复登录错误，再发布新版。小王负责测试，周五前完成。小李负责更新文档，截止日期未定。上线日期下周再讨论。” |
+| v1/v2 的文件差异 | v1 规定“已确定的决定、待办事项、待确认的问题”；v2 只将这一行改为“决定清单、行动清单、开放问题”，其他规则未变 |
+| 两次输出的关键差异 | v1 显式调用输出旧的三个标题；v2 显式调用输出“决定清单、行动清单、开放问题”。v2 保留“周五前完成”与“截止日期未定”，未编造具体上线日期 |
+| 实际出现的工具调用 | v1 普通请求：模型调用 `skill_view` 一次。v1 显式调用：CLI 已展开正文，模型未再调用工具。v2 显式调用：CLI 同样已展开正文，但模型又额外调用 `skill_view` 一次；这是冗余加载，不改变显式斜杠的 CLI 预加载机制 |
+| 哪些是规则，哪些是输入事实 | 技能规则：三个指定标题、待办项需负责人与截止时间、缺失信息写“未说明”、核对原文依据。用户事实：先修复登录错误再发布、小王测试且周五前完成、小李更新文档且日期未定、上线日期下周再讨论。表格或项目符号、是否冗余调用 `skill_view` 是模型执行选择 |
 
-我的理解变化与剩余问题：待填写。
+我的理解变化与剩余问题：1.1 已区分加载前的索引元数据与加载后的完整正文；1.2 实际观察到普通请求由模型根据已有索引选择技能，再通过 `skill_view` 加载完整正文；显式斜杠调用则由 CLI 预先展开正文。`skills_list` 负责列出技能元数据，`skill_view` 负责读取指定技能的完整内容；技能本身是被加载和遵循的指令，不是工具调用。自检中用户确认：在已有正文加载证据时，若模型编造具体上线日期，是模型执行/遵循指令层的问题，不是文件发现失败。
+
+1.2 自检中，我最初说“`skill_view` 是让 Agent 看到 skill 列表的 tool”，并认为普通请求是“先调用 `skill_view` 看到 `meeting-summary`，再判断使用”。前半句“`skill_view` 是工具而不是技能”是对的，但“用它看列表”和判断顺序不对：技能列表由系统提示词中的索引或 `skills_list` 提供；本次模型已从索引看到 `meeting-summary` 的 `name + description`，先判断它相关，然后才调用 `skill_view(name="meeting-summary")` 读取完整正文。
+
+v2 显式调用中的冗余 `skill_view` 还说明了消息角色边界：该会话的 system prompt 只有 `meeting-summary` 的索引条目，没有完整正文。CLI 将第一份完整正文展开在本轮 `user` 消息中；模型随后额外调用 `skill_view`，工具结果又返回第二份正文。因此第二次模型请求的整个对话上下文确实含有两份正文，但分别处于 `user` 消息和 `tool` 结果，不是 system prompt 里有两份。这会增加该回合的上下文量，但没有改写或破坏已缓存的 system prompt。
 
 ## 阶段 2：发现与解析
 
@@ -337,6 +341,70 @@ shell 语法：`PYTHONPATH="..." python -m hermes_cli.main` 是给单次 `python
 - **哪些仍只是推测：** 原句出现时“系统级”究竟特指 Codex 宿主、Hermes 核心，还是“任意 skill 都能直接调用的统一业务 API”，需要结合原句上下文确认；本次没有验证某个具体 provider 的网络端到端行为。
 - **现在我会怎样解释：** “系统级长期记忆接口”通常指由运行时统一拥有、可持久化、可跨会话检索并自动注入上下文的稳定契约，而不是把文字写进当前聊天或普通 Markdown。对当前 Codex 宿主来说，本会话没有暴露该接口；对 Hermes 来说，该契约已经存在，只是内置文件记忆与外部 provider 接口分成了两条路径。
 - **下一步最小动作：** 若目标是学习 Skills，继续阶段 0.3；若目标是扩展记忆，先用一个最小的目录式 `MemoryProvider` 插件验证 `register -> initialize -> sync_turn -> prefetch`，不要新增 core tool。
+
+### 2026-09-16 / 阶段 1 准备 / 临时实验恢复与最小技能 v1 预置
+
+- **今天只解决什么：** 在原 `/tmp` 实验目录消失后恢复可复现环境，并为阶段 1 预置 `meeting-summary` v1。这是环境准备，不代表用户已完成 1.1。
+- **操作前的状态：** 记录中的 `/tmp/hermes-skills-lab.YL4I5Y` 已不存在；学习虚拟环境仍存在；仓库已从记录时的 `f58635bd62` 前进到 `d0fd9fa10d`。用户尚未对本阶段输出做预测。
+- **实际执行的步骤或命令：** 新建 `/tmp/hermes-skills-lab.VuNjyi`，重建 `home`、`work` 和 `evidence`；写入最小 `config.yaml`；在 `home/skills/learning/meeting-summary/SKILL.md` 保存计划中的 v1；用显式 `HERMES_HOME` 和 `PYTHONPATH` 运行导入检查及 `chat --help`。
+- **原始输出或证据路径：** Python 实际路径为 `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning/bin/python`；`hermes_cli.main.__file__` 为 `/home/yin-hanyang/projects/hermes/hermes_cli/main.py`；CLI 帮助保存于 `/tmp/hermes-skills-lab.VuNjyi/evidence/chat-help.txt`；v1 位于 `/tmp/hermes-skills-lab.VuNjyi/home/skills/learning/meeting-summary/SKILL.md`。
+- **实验实际确认什么：** 新路径下的学习解释器能导入当前 checkout 的 CLI，帮助入口可运行，v1 文件已实际落盘。这些只是助手完成的环境与文件操作，不能作为用户已完成 1.1 的证据。
+- **不能由此确认什么：** `chat --help` 不调用模型，因此尚未证明 provider 可用、普通请求会否主动加载技能，或斜杠调用的输出是否符合 v1。
+- **现在我会怎样解释：** `/tmp` 实验目录是可丢弃的运行数据，学习记录才是恢复路径和区分历史证据的持久依据；重建后必须用新路径，不能把旧路径当成仍然有效。
+- **用户的纠正：** 用户指出对 1.1 没有执行印象，因此不应直接进入 1.2。该纠正成立：助手代为写入文件不等于用户经历了学习步骤。
+- **下一步最小动作：** 回到 1.1，由用户查看并核对 v1 的实际路径、frontmatter 和三条正文规则；在用户确认前不进入 1.2。
+
+### 2026-09-16 / 阶段 1.1 / frontmatter 与正文的分工
+
+- **今天只解决什么：** 亲自核对 v1，区分模型在技能加载前能看到的索引线索，与加载后才能看到的任务说明。
+- **用户的原始解释：** frontmatter 中的 `description` 描述“技能是什么”，在调用前就被 Agent 看到；Agent 根据 `name` 和 `description` 决定是否加载。“将用户提供的会议记录整理为中文摘要”也在描述技能，但是正文总结句，加载后才可见，不决定是否加载。`# Meeting Summary Skill` 之后的正文，包括 `Procedure` 和 `Verification`，决定技能怎样完成任务。
+- **代码核对：** `agent.prompt_builder.build_skills_system_prompt()` 为系统提示词生成紧凑技能索引；当前索引条目使用 frontmatter 的 `name` 和截断后的 `description`，并要求模型对匹配或部分相关的技能调用 `skill_view(name)`。`tools.skills_tool.skill_view()` 读取主 `SKILL.md` 并在结果的 `content` 中返回完整内容。
+- **需要收窄的表述：** “Agent 根据 `name` 和 `description` 决定是否加载”适用于普通请求下的模型主动加载路径，且是提示词影响下的模型选择，不是确定性的程序条件。对显式 `/meeting-summary`，加载由用户输入和 CLI 命令路径触发，不需要模型先根据描述作出选择。
+- **完成判断：** 用户已亲自查看 v1，并能准确解释 frontmatter、正文总结句、`Procedure` 和 `Verification` 的不同作用；阶段 1.1 完成。
+- **下一步最小动作：** 进入 1.2，先记录对普通请求与显式斜杠调用的预测，再做两个新会话的对照。
+
+### 2026-09-16 / 阶段 1.2 / 运行前预测
+
+- **今天只解决什么：** 在看到模型结果前，先记下对普通请求与显式斜杠调用的可检验预测。
+- **用户的原始预测：** “`/meeting-summary` 会：1. 正常有三个标题；2. 原文中有的日期或截止时间会明确记录，原文中没有的日期会标记未说明；3. 会留下技能加载痕迹。普通请求以上三点均没有保证。”
+- **预测的优点：** 它分别覆盖可观察的输出结构、缺失信息处理和加载证据；对普通请求使用“没有保证”，保留了模型主动加载技能的可能性。
+- **尚待实验回答：** 两次实际输出是什么，普通请求是否主动加载，显式斜杠调用在当前 CLI 中留下什么证据。
+- **下一步最小动作：** 使用同一模型和工具集启动两个新会话，先运行普通请求，再运行 `/meeting-summary`，保存原始输出。
+
+### 2026-09-16 / 阶段 1.2 / 基线尝试在 provider 检查处终止
+
+- **今天只解决什么：** 尝试运行普通请求基线，并确定请求未成功时停在哪一层。
+- **第一次尝试：** 启动命令遗漏实验 `HERMES_HOME`，CLI 因而尝试初始化日常 `/home/yin-hanyang/.hermes/cron`，并在只读文件系统处报 `HomeInitializationError`。这次尝试没有进入技能扫描或模型回合，不算基线对话结果。
+- **第二次尝试：** 显式传入 `HERMES_HOME=/tmp/hermes-skills-lab.VuNjyi/home` 和当前仓库 `PYTHONPATH`，在实验 `work` 目录以 `--toolsets skills,terminal --verbose --oneshot` 发送固定会议原文。
+- **实际输出：** CLI 报告 `Hermes is not connected to any AI provider yet.`，建议使用 `hermes model`、聊天中的 `/login`、`hermes auth add <provider>` 或在实验 `.env` 中配置 provider 密钥。
+- **实验能确认什么：** 隔离的 `HERMES_HOME` 目前没有可用 provider；请求在 Agent 回合和工具调用之前终止，因此当前没有普通请求输出，也没有技能是否被主动加载的证据。
+- **不应下的结论：** 不能因没有加载痕迹就说普通请求不会加载技能，也不能说 `meeting-summary` 发现或加载失败；这些路径尚未执行。
+- **下一步最小动作：** 在该隔离 `HERMES_HOME` 中配置一个可用 provider，然后用相同命令重做普通请求；在此之前不运行显式斜杠对照。
+
+### 2026-09-16 / 阶段 1.2 / provider 已配置
+
+- **用户实际操作：** 在隔离的 `HERMES_HOME` 中完成模型选择。
+- **实际配置结果：** 默认模型为 `upstage/solar-pro4:free`，`model.provider=nous`，推理强度为 `xhigh`；配置写入 `/tmp/hermes-skills-lab.VuNjyi/home/config.yaml`。
+- **证据边界：** 这证明 provider 和默认模型选择已持久化，但尚未证明真实推理请求成功，也尚未观察技能加载。
+- **下一步最小动作：** 使用该模型、`xhigh` 和 `skills,terminal` 工具集重做普通请求，再在独立新会话中做显式斜杠调用。
+
+### 2026-09-16 / 阶段 1.2 / 真实模型请求的网络与外发边界
+
+- **实际执行：** 使用已配置的 `nous` provider、`upstage/solar-pro4:free`、`xhigh` 和 `skills,terminal` 启动普通请求的独立 one-shot 会话。
+- **实际进展：** Agent 已成功初始化，并确认了 provider、模型和工具集；随后连接 `https://inference-api.nousresearch.com/v1` 时因当前执行沙箱无法解析域名而三次失败。会话记录显示 1 条用户消息、0 次工具调用，没有模型回答。
+- **升级请求结果：** 尝试申请在沙箱外连接 Nous，安全审查因会议文本可能属于私有内容而拒绝，要求用户在知道目标为 Nous 推理服务后明确授权该负载的外发。本次未绕过审查，也未将负载成功发送给模型。
+- **证据边界：** 可以确认实验配置和 Agent 初始化链路已通；不能确认模型是否主动加载技能，也不能评价输出是否符合预测。
+- **下一步最小动作：** 由用户明确决定是否允许将计划中的固定教学会议文本发送到 Nous 推理服务；获得授权后重跑两个独立会话。
+
+### 2026-09-16 / 阶段 1.2 概念深入 / 系统提示词技能索引与 `skills_list`
+
+- **用户的问题：** 如果系统提示词已经自动包含 `meeting-summary` 等技能索引，这个索引如何构造，`skills_list` 工具是否因而多余。
+- **构造路径：** `agent.system_prompt.build_system_prompt_parts()` 调用 `_skills_prompt(agent)`；只有当当前 Agent 的有效工具中至少有 `skills_list`、`skill_view` 或 `skill_manage` 之一时，才调用 `agent.prompt_builder.build_skills_system_prompt()`。后者以 Agent 自己的 profile `skills/` 为本地根，结合项目技能目录和外部目录，读取 `SKILL.md` frontmatter，取 `name` 和最多 60 字符的 `description`，应用禁用、平台、环境、工具/工具集条件及同名优先级，再按 category 渲染成 `<available_skills>` 索引。
+- **会话缓存边界：** 索引在新 Agent/会话构造系统提示词时生成，位于 prompt 的 volatile tier；“volatile”表示跨重建更容易变化，不表示每轮重扫。完整系统提示词会缓存在 Agent 上，会话中途不因磁盘技能变化而重写历史前缀。扫描本身还有进程内 LRU 和由 `SKILL.md`/`DESCRIPTION.md` 文件签名验证的 `.skills_prompt_snapshot.json` 磁盘快照。
+- **本次运行证据：** 普通请求会话的实际系统提示词在 `learning` 分类下包含 `meeting-summary: Use when summarizing meeting notes.`；模型因此没有调用 `skills_list`，而是直接调用 `skill_view(name="meeting-summary")`。
+- **`skills_list` 仍有的作用：** 它返回当前可查询的结构化 JSON（`name + description + category`），支持 category 过滤；能反映会话启动后重载/新增的技能，而无需破坏已缓存的系统提示词；也会合并运行时注册的 plugin skills。在 coding focus 中某些索引分类可能被压缩为只有名称，`skills_list` 仍可返回完整的索引元数据。
+- **结论：** 对“新会话启动时已出现在索引里的普通本地技能”，模型通常不需要再调用 `skills_list`；但系统提示词索引是会话启动快照，`skills_list` 是运行时查询接口，两者的时间边界和输出形式不同。
+- **用户的理解确认：** 用户已能用自己的话说明：大多数普通情况下，模型无需调用 `skills_list` 就已从系统提示词索引获得项目和本地 profile 技能的 `name + description`；技能在会话中途变化，或 focus 模式压缩了索引信息时，才更需要 `skills_list` 查询当前结构化元数据。补充前提是 Skills 工具面已启用、技能通过可见性过滤，且索引还可包含配置的外部技能目录。
 
 ## 疑问清单
 
