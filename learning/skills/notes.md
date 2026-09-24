@@ -14,15 +14,17 @@
 - 不清楚的内容写“待验证”；复制计划中的预期时注明“预期”，不要写成已观察结果。
 - 可以自己填写，也可以让助手根据对话更新。助手不应代替我认定“我已理解”，或把没有执行的实验勾为完成。
 - 每次学习问答结束、继续下一步之前，助手应判断本轮整体内容是否具有长期学习价值；有价值时立即记录到本文，并区分事实、运行证据和待验证推测，无需等待再次提醒。
+- 学习重点是 Skills/Agent 的机制与数据流。普通 Python 语法和逐行实现细节只在确实暴露理解问题、影响 Agent 机制判断或具有长期排障价值时记录；当场即可解决的基础细节不逐问归档。
+- 助手要求阅读某个函数时，应附上可点击的源码路径和行号，并明确它位于当前文件还是需要切换到另一个文件，避免只给函数名让用户自行搜索。
 - 记录目录、模型名称和错误信息即可，不保存密钥、令牌或完整敏感配置。
 
 ## 当前进度
 
 | 阶段 | 状态 | 日期 | 证据位置 | 下一步 |
 | --- | --- | --- | --- | --- |
-| 0. 环境准备 | 已完成（0.1～0.3 与自检；已恢复新的临时实验目录） | 2026-09-15～2026-09-16 | 本文“环境与复现信息”及“阶段 0 自检” | 使用新路径继续阶段 1 |
+| 0. 环境准备 | 已完成（0.1～0.3 与自检；2026-09-24 再次重建临时实验目录） | 2026-09-15～2026-09-24 | 本文“环境与复现信息”及“阶段 0 自检” | 使用新路径继续阶段 2.2 |
 | 1. 最小技能 | 已完成（1.1～1.3 与自检） | 2026-09-16 | 实验 `SKILL.md`；会话 `20260916_172929_a2cd43`、`20260916_173136_64b59c` 与 `20260916_175614_8a8d7d`；本文 1.2～1.3 对照结果 | 进入阶段 2，追踪文件如何变成命令条目 |
-| 2. 发现与解析 | 进行中（即将开始 2.1） | 2026-09-16 | — | 阅读解析、目录与扫描函数 |
+| 2. 发现与解析 | 已完成（2.1～2.3、受控失败与最终自检） | 2026-09-18～2026-09-24 | 本文“阶段 2”的代码阅读、直接函数运行和最终自检 | 进入阶段 3，观察显式命令真正生成的消息 |
 | 3. 消息构造 | 未开始 | — | — | 保存实际展开的消息 |
 | 4. 主动加载 | 未开始 | — | — | 对比两条加载路径 |
 | 5. 附件与执行 | 未开始 | — | — | 读取附件并运行脚本 |
@@ -52,18 +54,18 @@
 
 | 项目 | 本次实际值 |
 | --- | --- |
-| 学习日期 | 2026-09-15～2026-09-16 |
-| 实际源码提交 | 最初 `f58635bd62`；当前 `d0fd9fa10d` |
+| 学习日期 | 2026-09-15～2026-09-24 |
+| 实际源码提交 | 最初 `f58635bd62`；阶段 1 时 `d0fd9fa10d`；官方 `upstream/main` 已同步到 `c62bd9f207`，当前学习分支合并提交 `a47466e36c` |
 | 仓库绝对路径 / SKILLS_REPO | `/home/yin-hanyang/projects/hermes` |
 | Python 可执行文件与版本 | `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning/bin/python`；Python 3.11.16 |
 | 虚拟环境 | `/home/yin-hanyang/.hermes/venvs/hermes-skills-learning` |
-| SKILLS_LAB | 当前 `/tmp/hermes-skills-lab.VuNjyi`；原 `/tmp/hermes-skills-lab.YL4I5Y` 已被系统清理 |
-| HERMES_HOME | `/tmp/hermes-skills-lab.VuNjyi/home` |
-| 实验工作目录 | `/tmp/hermes-skills-lab.VuNjyi/work` |
-| 使用界面 | Python 经典 CLI；`skills_lab_cli chat --help` 已正常显示 |
-| 模型 / provider | `upstage/solar-pro4:free` / `nous`；2026-09-16 已在隔离配置中设为默认模型；reasoning effort 为 `xhigh`；不记录密钥 |
-| 启用工具集 | 1.2 尝试显式请求 `skills,terminal`，但 provider 检查失败后未进入 Agent 回合 |
-| 证据保存目录 | `/tmp/hermes-skills-lab.VuNjyi/evidence` |
+| SKILLS_LAB | 当前 `/tmp/hermes-skills-lab.nS7b4j`；此前的实验目录均已被系统清理 |
+| HERMES_HOME | `/tmp/hermes-skills-lab.nS7b4j/home` |
+| 实验工作目录 | `/tmp/hermes-skills-lab.nS7b4j/work` |
+| 使用界面 | Python 经典 CLI；2026-09-24 已核对最小配置、`meeting-summary` v2、`work/` 与 `evidence/`，尚未在新目录重复聊天入口检查 |
+| 模型 / provider | 阶段 1 的旧目录曾配置 `upstage/solar-pro4:free` / `nous` 与 `xhigh`；当前新目录未配置 provider，阶段 2.2 不需要模型；不记录密钥 |
+| 启用工具集 | 阶段 1 的成功会话可用 Skills 工具并实际出现 `skill_view`；当前新目录尚未启动 Agent |
+| 证据保存目录 | `/tmp/hermes-skills-lab.nS7b4j/evidence`；关键结论仍需写入本文，不能只依赖 `/tmp` |
 
 计划编写时的环境探测仅供参考：仓库内未发现 `.venv/` 或 `venv/`，系统 Python 缺少 `dotenv` 和 `pytest`。开始实验时应重新核对，不能据此推断机器上没有其他环境。
 
@@ -75,7 +77,7 @@
 cd /home/yin-hanyang/projects/hermes
 source ~/.hermes/venvs/hermes-skills-learning/bin/activate
 export SKILLS_REPO="/home/yin-hanyang/projects/hermes"
-export SKILLS_LAB="/tmp/hermes-skills-lab.VuNjyi"
+export SKILLS_LAB="/tmp/hermes-skills-lab.nS7b4j"
 export HERMES_HOME="$SKILLS_LAB/home"
 
 skills_lab_cli() (
@@ -84,11 +86,8 @@ skills_lab_cli() (
     python -m hermes_cli.main "$@"
 )
 
-skills_lab_cli chat --help
-
 以上变量和 skills_lab_cli 函数只在当前 shell 及其子进程中有效。
-新终端需要重新设置；若 /tmp 中的实验目录已被清理，则重新执行阶段 0.2，
-不能继续引用已经不存在的目录。
+新终端需要重新设置；若 /tmp 中的实验目录再次被清理，则重新执行阶段 0.2。
 ```
 
 ### 为什么实验要创建最小 `config.yaml`
@@ -180,23 +179,112 @@ v2 显式调用中的冗余 `skill_view` 还说明了消息角色边界：该会
 
 ## 阶段 2：发现与解析
 
-- [ ] 已阅读解析函数和扫描函数。
-- [ ] 已打印实验技能的真实元数据与命令条目。
-- [ ] 已观察文件改名后的结果，并恢复文件。
+- [x] 已阅读解析函数和扫描函数。
+- [x] 已打印实验技能的真实元数据与命令条目。
+- [x] 已观察文件改名后的结果，并恢复文件。
 
 | 数据流节点 | 实际值或摘要 | 负责的函数 | 证据类型 |
 | --- | --- | --- | --- |
-| 扫描根目录 | 待填写 | 待填写 | 待填写 |
-| SKILL.md 路径 | 待填写 | 待填写 | 待填写 |
-| frontmatter | 待填写 | 待填写 | 待填写 |
-| Markdown 正文 | 待填写 | 待填写 | 待填写 |
-| 命令键与条目 | 待填写 | 待填写 | 待填写 |
+| 扫描根目录 | `/tmp/hermes-skills-lab.nS7b4j/home/skills`；当前没有 `create_dir` 或 external 来源 | `get_all_skills_dirs()` | 直接函数运行 |
+| SKILL.md 路径 | `/tmp/hermes-skills-lab.nS7b4j/home/skills/learning/meeting-summary/SKILL.md` | 实验脚本按当前 `HERMES_HOME` 构造；扫描器枚举精确命名的 `SKILL.md` | 直接函数运行 |
+| frontmatter | `name: meeting-summary`；`description: Use when summarizing meeting notes.`，返回为 Python 字典 | `parse_frontmatter()` | 直接函数运行 |
+| Markdown 正文 | 与 frontmatter 分离，从 `# Meeting Summary Skill` 开始，包含 v2 的三个标题规则与 Verification | `parse_frontmatter()` 返回值中的 `body` | 直接函数运行 |
+| 命令键与条目 | `/meeting-summary` → `name`、`description`、`skill_md_path`、`skill_dir`，路径均指向当前隔离目录 | `scan_skill_commands()`、`_scan_skill_md()` | 直接函数运行 |
 
 我原以为：待填写。
 
-文件改名实验的实际结果：待填写。
+文件改名实验的实际结果：用户运行带自动恢复的受控命令并报告已确认预期，即文件改名
+为 `SKILL.md.disabled` 后 `/meeting-summary` 条目消失。随后只读核对确认 `SKILL.md`
+已经恢复、`.disabled` 不存在，重新扫描再次得到包含名称、说明和两个定位路径的命令条目。
 
-现在如何解释“文件存在但技能没出现”：待填写。
+现在如何解释“文件存在但技能没出现”：先区分“文件在磁盘上”和“扫描器枚举到了它”。
+主文件必须精确命名为 `SKILL.md` 并位于实际扫描根下，才会传入 `_scan_skill_md()`；到达
+该函数后还需通过路径、平台/环境、禁用、同名优先级、slug 有效性及命令冲突等过滤。
+因此应先定位失败发生在枚举前还是过滤后，不能直接归因于模型行为。
+
+2.3 运行前预测：用户预测把 `SKILL.md` 改为 `SKILL.md.disabled` 后，
+`scan_skill_commands().get("/meeting-summary")` 返回空值；结果预测正确，但最初认为
+改名文件仍会传入 `_scan_skill_md()`，再被该函数跳过。源码校准是扫描迭代器只枚举
+精确名为 `SKILL.md` 的文件，因此改名文件根本不会到达 `_scan_skill_md()`。这与配置
+中的 disabled skill 不同：后者仍被枚举，然后才由 `_scan_skill_md()` 根据 disabled
+名称集合过滤。
+
+2.2 的完成与证据边界：用户指出仅执行命令不等于完成学习；随后已把输出对应回
+“扫描根目录 → `SKILL.md` → frontmatter/body → 命令键与条目”，并正确说明命令条目
+只保存名称、说明和定位信息而不保存正文，因此 2.2 完成。本次没有启动 Agent 或调用
+模型，只能证明实验文件可被当前代码解析并生成斜杠命令条目，不能证明模型会主动
+选择、加载或正确遵循该技能。
+
+2.2 自检中的原始解释与修正：用户正确指出 `_scan_skill_md()` 构造的条目只有
+`name`、`description` 和定位信息，没有正文；但随后推断显式执行
+`/meeting-summary` 时模型还需要调用读取正文的工具。这个推断混合了两条路径：显式
+斜杠调用由 CLI 使用条目中的路径，在模型请求前通过共享 loader 读取正文并展开进本轮
+用户消息，模型不必再发出 `skill_view`；普通请求下的主动加载才通常由模型从索引判断
+相关性后调用 `skill_view`。因此“命令条目不含正文”表示发现层保持轻量、加载层按需
+读取，并不表示两种入口都由模型触发读取。用户进一步指出这条 loader 控制流尚未在
+阶段 2 学习；计划核对确认它属于阶段 3.1～3.2，而两条加载路径的系统比较属于阶段 4。
+本轮只把它作为纠正错误推断的预告，不作为 2.2 的掌握要求。后续教学应保持阶段边界：
+可以标明后续结论，但不能用尚未学习的控制流考核当前阶段。
+
+### 阶段 2 最终自检
+
+- **用户已经建立的数据流：** Hermes 从技能根目录枚举精确命名的 `SKILL.md`，
+  `scan_skill_commands()` 把文件交给 `_scan_skill_md()`；后者解析 frontmatter、应用过滤、
+  将技能名规范化成 `/slug`，并生成包含 `name`、`description`、`skill_md_path`、
+  `skill_dir` 的命令条目。最终返回值是命令键到条目的字典。
+- **目录来源校准：** 当前斜杠扫描的实际顺序是 trusted project → 当前 profile-local →
+  external；仅由 `skills.create_dir` 引入的目录因已复现的遗漏没有进入这条扫描路径。
+  profile-local 应理解为当前有效 `HERMES_HOME/skills`，不总是字面上的
+  `~/.hermes/skills/`。
+- **trusted project 的边界：** Agent 的工作目录只用于向上寻找最近的 Git 根目录，不能
+  自动使项目受信。该根目录还必须显式列在 `skills.trusted_project_dirs` 中，且
+  `skills.project_discovery` 没有关闭；之后只发现根目录下现有的 `.hermes/skills` 和
+  `.agents/skills`。受信项目技能仍要经过项目技能安全扫描，不是对工作目录下任意文件
+  的自动加载。
+- **信任与放置原则：** Hermes 的项目 trust 通常由用户对每个仓库执行一次
+  `hermes skills trust [path]`，命令把根目录写入配置，无需手改 YAML，也不应自动信任
+  任意 clone。跨项目适用的个人工作流放 profile-local skills；只对当前仓库成立、需要
+  随代码版本化和团队共享的可重复工作流优先放项目 `.agents/skills`（Hermes 专用时可用
+  `.hermes/skills`）；每次会话都必须知道的项目规则应写 `AGENTS.md`，而不是做成按需
+  加载的 skill。
+- **frontmatter 校准：** 标准边界是三个 ASCII 连字符 `---`。`name` 和 `description`
+  是规范技能通常应提供的元数据，但 `_scan_skill_md()` 对缺失值有 fallback：名称可取
+  父目录名，说明可取正文首个非标题行或默认说明；因此“缺少字段”不能直接当作命令
+  消失的充分原因。
+- **分层排查结论：** 先检查扫描根与精确文件名，确认文件是否被枚举；再检查路径排除、
+  platform/environment、配置禁用、同名 first-wins、slug 有效性、核心命令/slug 冲突等
+  过滤；只有进入后续模型阶段后，才讨论模型是否选择或遵循技能。
+- **完成判断：** 用户能够解释“目录 → 文件 → frontmatter/body → 命令键与条目”，并用
+  改名实验区分枚举失败和 `_scan_skill_md()` 内部过滤；阶段 2 完成。
+
+2026-09-18 进度纠正：用户确认此前只完成到阶段 1；上一会话曾把“先由用户说明
+`parse_frontmatter()`”口头称作阶段 2.0。本轮确认它适合作为 2.1 的开场自检，但没有
+必要成为计划外的正式小节。助手此前单方面执行的后续源码核对和实验仍不计入用户
+学习进度；阶段 2 从用户实际说明该函数时才开始。
+
+### 2.1 开场自检：`parse_frontmatter()`
+
+- **用户的原始说明：** “`parse_frontmatter()` 就是一个把 `SKILL.md` 拆成‘元数据’和‘正文’的函数，其中元数据是 YAML 格式。”
+- **关键理解：** 该函数接收已经读出的文本，把 YAML frontmatter 解析成 Python `dict`，并把剩余 Markdown 作为正文 `str` 返回；它本身不负责打开 `SKILL.md`。这一步让后续发现逻辑可以使用 `name`、`description` 等元数据，而不必把完整正文当成索引。
+- **实际出现的理解修正：** “元数据是 YAML 格式”应收窄为“文件中用 YAML 表示，返回后是 Python 字典”；用户曾把 `{}` 称为“空数组”，已校准为空字典。用户能够正确判断边界缺失时返回空字典和正文、成功分割后不保留 `---`，以及异常时存在简单的 `key:value` fallback。
+- **记录边界：** BOM、正则空白范围、切片下标等属于本次当场核对的基础实现细节，不再逐项保留；除非以后它们成为实际发现失败的原因。
+- **阶段性判断：** `parse_frontmatter()` 初步自检完成；目录函数和扫描函数尚未完成，因此阶段 2 的总检查项仍不勾选。
+
+### 2.1 目录来源：`get_all_skills_dirs()`
+
+- **用户的说明：** 返回顺序是 Hermes 默认的本地 skills 目录、配置的 `create_dir`、`get_external_skills_dirs()` 提供的外部目录。
+- **关键补充：** `create_dir` 只有实际存在且为目录时才加入，外部目录不会重复加入已有路径。trusted project skills 有意不在这个函数中，而由独立项目发现路径处理，以承载更高优先级和项目技能安全检查。
+- **`create_dir` 的行为边界：** 它是新技能创建位置的可选重定向，不是启用 Agent 创建技能的开关。未配置时，`skill_manage` 把新技能写入当前 profile 的本地 skills 目录；配置后才改写到 `create_dir`。现有技能是否可被查找和修改由发现与管理路径决定，不由“是否位于 `create_dir`”定义所有权。
+- **用户发现的路径差异：** `scan_skill_commands()` 实际只组合 trusted project、当前 profile-local 和 `get_external_skills_dirs()`，没有使用 `get_all_skills_dirs()`，因此遗漏了仅通过 `skills.create_dir` 配置的目录。`tools.skills_tool._skill_search_dirs()` 也存在同样遗漏。
+- **设计意图与代码证据：** 引入 `create_dir` 的提交 `42c2838674` 明确要求创建后的技能被发现、读取和修改；用户文档进一步声明它应进入索引、`skills_list`、`skill_view` 和斜杠命令。在官方 `upstream/main` 提交 `c62bd9f207` 上，`scan_skill_commands()` 和 `tools.skills_tool._skill_search_dirs()` 仍各自手工组合目录，仍然未包含 `create_dir`。
+- **最新代码上的运行证据：** 在临时 `HERMES_HOME` 中配置 `skills.create_dir`，并只在该目录放置 `create-only-skill`。`get_all_skills_dirs()` 包含该目录，系统提示词索引也包含该技能；但 `skills_list()` 不列出它，`skill_view()` 返回 `Skill 'create-only-skill' not found.`，`scan_skill_commands()` 也没有注册 `/create-only-skill`。因此“真实实现遗漏”已从代码推断升级为运行复现结论。
+- **测试缺口：** 规范脚本 `scripts/run_tests.sh tests/tools/test_skill_create_dir.py -q` 在同步后代码上 16/16 通过，但该文件仍只覆盖 `get_all_skills_dirs()`、创建与再次修改，没有覆盖 `skills_list`、`skill_view` 或斜杠扫描；所以绿色测试不否定上述复现。
+- **上游协作状态：** 官方 issue `#108157` 已经记录了同一问题，其作者也已提交修复 PR `#108160`；截至 2026-09-18 两者均为 Open。因此这是适合贡献的真实 bug，但当前不适合再独立提交相同修复；可以通过复核 PR、提供新的测试证据、与作者协作，或选择其明确列为 out-of-scope 的后续问题参与。
+- **用户对 `_scan_skill_md()` 的说明：** 会跳过位于排除路径中的文件、平台或环境不匹配的技能、已见同名或配置禁用的技能，以及无法生成有效命令名的技能；成功条目包含 `name`、`description`、`skill_md_path`、`skill_dir`。
+- **关键补充：** 还会跳过与 Hermes 核心命令/别名冲突的 slug，以及不同技能名规范化后产生的重复命令键。`description` 优先使用 frontmatter，缺失时取正文首个非标题行，最后才生成默认说明。
+- **用户对扫描与缓存的说明：** `scan_skill_commands()` 真正执行扫描；`get_skill_commands()` 可能复用结果，在命令表为空，或当前 platform / Hermes home 与缓存标签不一致时重新扫描。
+- **关键补充：** 这里的 home 是当前有效 profile 的 Hermes home，而不只是某个本地 `skills/` 路径。`scan_skill_commands()` 扫描完成后一次性发布命令表及 platform/home 标签；空结果因 `bool(commands)` 为假，不会被当作可复用的 fresh cache。
+- **2.1 完成判断：** 用户已沿实际代码说明 frontmatter 解析、目录来源、扫描集合、单文件过滤、命令条目及缓存复用边界；进入 2.2 的直接函数实验。
 
 ## 阶段 3：消息构造
 
@@ -406,6 +494,16 @@ v2 显式调用中的冗余 `skill_view` 还说明了消息角色边界：该会
 - **结论：** 对“新会话启动时已出现在索引里的普通本地技能”，模型通常不需要再调用 `skills_list`；但系统提示词索引是会话启动快照，`skills_list` 是运行时查询接口，两者的时间边界和输出形式不同。
 - **用户的理解确认：** 用户已能用自己的话说明：大多数普通情况下，模型无需调用 `skills_list` 就已从系统提示词索引获得项目和本地 profile 技能的 `name + description`；技能在会话中途变化，或 focus 模式压缩了索引信息时，才更需要 `skills_list` 查询当前结构化元数据。补充前提是 Skills 工具面已启用、技能通过可见性过滤，且索引还可包含配置的外部技能目录。
 
+### 2026-09-18 / 进度纠正与 2.1 开始
+
+- **用户纠正：** 此前其他会话只推进到阶段 1 结束；阶段 2 的第一步是先由用户说明 `parse_frontmatter()`。
+- **错误原因：** 当前书面 `plan.md` 从 2.1 开始，`notes.md` 也只写了“即将开始 2.1”；本轮助手只依据文件恢复进度，并把“继续推进”误解成可以直接代做 2.1～2.3，没有先向用户核对未写入文件的会话检查点。
+- **历史核对：** 当前可见的 Git 提交历史中，`plan.md` 没有出现过 2.0；因此 2.0 应是上一会话临时加入但未持久化的教学步骤，不能据此否定用户对实际学习进度的回忆。
+- **如何处理：** 助手本轮自行运行的扫描和改名实验不计入用户学习进度；阶段 2 的检查项与结果栏均恢复为未完成。新的临时实验目录可以用于后续复现，但不代表阶段 2 已学习。随后确认所谓 2.0 更适合作为计划内 2.1 的开场自检，不另设正式编号。
+- **2.1 的关键理解：** `parse_frontmatter()` 把已读出的技能文本拆成供发现逻辑使用的元数据字典和 Markdown 正文。用户已掌握主要分支；关键修正是区分“文件中用 YAML 表示”和“函数返回 Python 字典”，以及把 `{}` 从“空数组”校准为空字典。
+- **学习粒度调整：** 用户指出此前对正则、切片等基础 Python 实现追问过细。后续以 Agent/Skills 机制为主；基础代码只在理解错误会影响机制判断时深入，笔记也只保留实际误解、关键概念和可复用排障证据。
+- **下一步最小动作：** 阅读 `get_all_skills_dirs()`，先由用户说明它返回哪些目录以及为什么明确不包含 trusted project skills。
+
 ## 疑问清单
 
 | 编号 | 问题 | 当前猜测 | 需要什么证据 | 状态 |
@@ -451,3 +549,6 @@ v2 显式调用中的冗余 `skill_view` 还说明了消息角色边界：该会
 | --- | --- | --- |
 | 2026-09-11 | 创建学习记录框架，所有学习阶段保持未开始 | 用户请求；尚未执行学习实验 |
 | 2026-09-15 | 完成阶段 0.1～0.3，记录环境证据、`PATH → 解释器 → PYTHONPATH/sys.path → 模块` 的混乱与最终理解、最小配置文件、CLI 帮助入口验证和四类路径自检；加入有长期学习价值时自动更新笔记的协作约定 | 用户实际命令输出、自检回答、附带总结文字、本次问答与源码阅读 |
+| 2026-09-18 | 纠正阶段 2 进度：此前仅完成阶段 1；助手越序执行不计入学习进度。随后将口头称作 2.0 的 `parse_frontmatter()` 说明统一归入 2.1 开场自检，并记录用户的初始解释与返回类型校准 | 用户对实际会话进度的纠正；当前 Git 历史核对；本轮源码说明 |
+| 2026-09-18 | 将学习分支合并到最新官方 `main` (`c62bd9f207`)，并在临时 `HERMES_HOME` 上复现 `create_dir` 技能只进入系统索引、不进入 `skills_list` / `skill_view` / 斜杠命令的不一致；确认现有 16 个 `create_dir` 测试仍未覆盖这三个入口 | 最新源码阅读；临时目录运行复现；规范测试脚本输出 |
+| 2026-09-18 | 核对官方协作状态：同一问题已有 Open issue `#108157` 和 Open PR `#108160`，因此不再建议创建重复 PR，而应复核、协作或选择未被占用的后续问题 | 官方 GitHub issue、PR 与 `CONTRIBUTING.md` 的重复检查要求 |
