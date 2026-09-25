@@ -8,7 +8,7 @@
 
 ## 目标与安排
 
-学完后，应能沿着实际代码解释：一份 `SKILL.md` 如何被发现、被选择、进入模型上下文，再影响工具调用；也能判断问题发生在发现、加载、推理、执行还是保存阶段。
+学完后，应能沿着实际代码解释：一份 `SKILL.md` 如何被发现、被选择、进入模型上下文，再影响工具调用；模型何时决定保存新技能、通过什么工具写入、下次会话怎样发现它；也能判断问题发生在发现、加载、判断、执行还是保存阶段。
 
 | 阶段 | 时间参考 | 核心问题 | 留下的证据 |
 | --- | --- | --- | --- |
@@ -17,14 +17,14 @@
 | 2. 发现与解析 | 40～60 分钟 | 文件怎样成为命令条目？ | 元数据与命令条目 |
 | 3. 消息构造 | 45～60 分钟 | `/技能名` 如何变成模型可读的消息？ | 展开后的消息、调用关系 |
 | 4. 主动加载 | 45～60 分钟 | 显式调用与模型主动读取有什么区别？ | 索引、正文、工具调用对照 |
-| 5. 附件与执行 | 45～60 分钟 | 读说明和运行脚本在哪里分开？ | 文件读取、执行成功与失败记录 |
-| 6. 修改与安装 | 45～60 分钟 | 技能怎样持久化并供下次使用？ | 文件差异、安装流程图 |
+| 5. 自主创建与生命周期 | 90～120 分钟，可分多次 | 模型何时自主判断值得创建技能，怎样写入、修改和安装？ | 判断与工具调用、文件差异、安装流程图 |
+| 6. 附件与执行 | 45～60 分钟 | 读说明和运行脚本在哪里分开？ | 文件读取、执行成功与失败记录 |
 
 不要求一天完成。每次结束前用 5 分钟填写记录：原先的猜测、看到的证据、修正后的理解、仍未解决的问题。先完成阶段 1～3，再继续后半程。
 
 ## 实验约定
 
-- 所有阶段围绕 `meeting-summary`，不同时研究多个复杂技能。
+- 所有阶段围绕 `meeting-summary`；阶段 5 若模型决定创建新技能，只用同一会议场景中一个简单的后续工作流，不同时研究多个复杂技能。
 - shell 命令在终端执行，`/meeting-summary` 等斜杠命令在 Hermes 聊天输入框执行，Python 代码块按照标注方式执行。
 - “预期现象”是待验证的预测，不能直接抄成实验结果。模型声称读过文件，不等于已经有工具调用证据。
 - 直接调用解析、扫描、消息构造函数，不需要模型推理；真实聊天需要可用的模型配置。这些函数仍可能读取配置、写入缓存或使用记录，因此也使用实验数据目录。
@@ -321,9 +321,95 @@ skills_lab_cli chat --toolsets skills,terminal --verbose
 
 **完成标准：** 能解释“知道有这个技能”和“已读完整正文”的区别，以及两条路径如何复用底层读取逻辑。
 
-## 阶段 5：增加参考文件与真正执行的脚本
+## 阶段 5：模型自主创建、修改与安装技能
 
-### 5.1 创建参考文件
+本阶段的主问题是：Hermes 怎样从一次任务中判断“这是值得保存的可复用做法”，再把决定变成磁盘上的 `SKILL.md`？把**模型作出判断**、**`skill_manage` 执行写入**、**新会话发现文件**分开取证。修改现有技能和 Hub 安装也放在本阶段，最后比较三条路径。不要把一次明确的“请创建技能”指令或 `/learn` 当作模型自主判断的证据。
+
+### 5.1 先画出判断与写入边界
+
+先预测：前台模型、回合结束后的后台 review、`skill_manage` 各负责哪一步。然后按当前生产代码核对：
+
+1. 读 [SKILLS_GUIDANCE](/home/yin-hanyang/projects/hermes/agent/prompt_builder.py:256) 和 [system_prompt.py](/home/yin-hanyang/projects/hermes/agent/system_prompt.py:294)：只有当前工具面有 `skill_manage` 时，相关引导才进入提示词。提示词鼓励保存非平凡工作流，不是一个保证每次都创建的程序判断器。
+2. 读 [turn_finalizer.py](/home/yin-hanyang/projects/hermes/agent/turn_finalizer.py:682) 的技能 review 触发条件，再读 [background_review.py](/home/yin-hanyang/projects/hermes/agent/background_review.py:418) 中“先更新现有技能、没有合适对象再创建”的指引。后台 review 使用独立的模型任务；触发条件与模型最终选择是两种证据。`skills.creation_nudge_interval` 统计的是工具迭代，不是固定的用户消息数。
+3. 读 [SKILL_MANAGE_SCHEMA](/home/yin-hanyang/projects/hermes/tools/skill_manager_tool.py:863)、[`skill_manage()`](/home/yin-hanyang/projects/hermes/tools/skill_manager_tool.py:762) 和 [`_create_skill()`](/home/yin-hanyang/projects/hermes/tools/skill_manager_tool.py:424)：模型公开接口使用 `operations` 数组；`create` 提交完整 `SKILL.md` 文本；写入可能先经过审批门槛。区分模型的决定、工具请求、工具成功结果和实际文件。
+
+只读到足以解释一条创建路径，不通读整个后台 review 或 Curator。Curator 主要维护已有技能；其可选整合过程可能新建 umbrella 技能，但这不是本阶段的首次创建主线。
+
+### 5.2 观察一次未被明确要求创建技能的任务
+
+这部分需要在隔离 `HERMES_HOME` 中配置可用模型；当前临时目录若尚未配置 provider，先完成配置，不把“模型未启动”当作“不愿创建”。在 `$SKILLS_LAB/work` 准备一份**合成的**会议后续事项文件，包含负责人、期限和至少一项缺失信息。不要改动 `meeting-summary` v2；新技能若出现，应是同一会议场景中不同于“摘要”的可复用后续工作流。
+
+先记下预测，再在新会话用 `skills` 与文件/终端工具请求模型读取该文件、整理行动项和待确认事项、起草跟进消息。输入中不提 `skill_manage`、`/learn` 或“创建技能”。先在实验配置中关闭 `auxiliary.background_review.enabled`，这样本轮观察的是**前台模型**有没有自行提出或调用 `skill_manage(create)`。记录真实工具调用、参数、结果、最终回答和磁盘文件；没有创建也如实记录，不能仅凭最终回答判断是否写入。
+
+随后另开新会话，把实验配置中的后台 review 重新开启，并暂设 `skills.creation_nudge_interval: 1`；让模型处理一份需要至少一次工具调用的合成会议文件。根据 [turn_finalizer.py](/home/yin-hanyang/projects/hermes/agent/turn_finalizer.py:682) 的条件核对 review 是否被触发，再分别记录后台模型是否决定创建、更新或不写。实验后恢复该配置并重启会话。触发 review 不等于 `create` 必然发生；前台与后台的工具调用证据不能混记。
+
+若两轮都没有自主创建，不要把 `/learn` 的成功写成自主行为。可以另开一轮明确要求 `/learn`，只用来验证受用户指令驱动的创建及落盘路径，并把“自主创建未观察到”保留为待验证。若出现新技能，用新进程检查 `SKILL.md`、`skills_list` 或斜杠扫描，再在新会话观察索引；不要声称当前会话的旧系统提示词已被改写。
+
+### 5.3 核对创建工具与实际文件
+
+对 5.2 中实际发生的一次 `skill_manage` 调用，核对模型传入的 `operations`、工具返回的成功/失败/待审批状态和磁盘上的 `SKILL.md`。如果只是待审批，完成审批后再检查文件；如果模型没有调用工具，则不能把文件手工写入当作模型创建。记录新技能放在当前 profile-local `skills/` 还是配置的 `skills.create_dir`，以及它为何会在后续发现链中出现。
+
+### 5.4 通过模型修改现有技能
+
+先把实验 `meeting-summary/SKILL.md` 复制到 `$SKILLS_LAB/evidence/skill-before-manage.md`。在启用 `skills` 工具集的新会话中输入：
+
+```text
+请先读取 meeting-summary 技能，然后用 skill_manage 将“未说明”统一替换为“待补充”。只修改这个实验技能，不改变其他规则。请说明实际修改结果。
+```
+
+观察它是否先 `skill_view`，实际 `operations` 是否使用 `patch`，以及工具结果和文件差异。下例是参数形状示意，不是本次已观察结果：
+
+```json
+{
+  "operations": [
+    {
+      "name": "meeting-summary",
+      "action": "patch",
+      "old_string": "未说明",
+      "new_string": "待补充",
+      "replace_all": true
+    }
+  ]
+}
+```
+
+比较差异：
+
+```bash
+diff -u "$SKILLS_LAB/evidence/skill-before-manage.md" "$HERMES_HOME/skills/learning/meeting-summary/SKILL.md"
+```
+
+`diff` 有差异时退出码为 1，属于正常结果。若工具返回待审批状态，完成审批后再检查磁盘；不要把“已提交修改请求”当作“文件已经写入”。随后新开会话重新调用技能，验证修改被加载。阶段 6 将增加 `references/`；到时再单独检查“修改主文件”是否覆盖参考文件，不提前假设两者会同步变化。
+
+### 5.5 阅读一条 Hub 安装路径
+
+主线只读代码，不要求现在安装外部技能：
+
+1. 在 [hermes_cli/skills_hub.py](../../hermes_cli/skills_hub.py) 找 `do_install()`，查看它如何取得来源、下载结果和扫描结果。
+2. 在 [tools/skills_hub.py](../../tools/skills_hub.py) 找 `UrlSource`，阅读 `SKILL.md` 与引用附属文件如何组成 bundle。
+3. 找 `quarantine_bundle()`、`install_from_quarantine()`、`HubLockFile`，记录哪些步骤落盘、锁文件记录什么，以及失败如何阻止后续安装。
+4. 回到阶段 2，回答安装后的文件为什么能被扫描。下载代码无需自行“把技能注册进模型”。
+
+画出“来源 → 下载内容 → 隔离暂存 → 扫描与策略判断 → 安装目录及锁记录 → 后续发现”的关系图，并按真实控制流修正顺序。区分这个下载 bundle 与多个技能组合成斜杠命令的 skill bundle。
+
+### 5.6 用已有测试理解行为约束
+
+先从 [test_skill_manage_batch.py](../../tests/tools/test_skill_manage_batch.py) 读 `test_create_plus_files_atomic`：它通过 Python 调用验证 `operations` 中的 `create` 与附属文件写入能够一起落盘，但不能证明模型曾自主决定创建。再从 [test_skill_commands.py](../../tests/agent/test_skill_commands.py) 选读 `test_uses_shared_skill_loader_for_secure_setup`、`test_supporting_file_hint_uses_file_path_argument`，保留原计划对共享加载器与附件提示的核对。分别写出准备条件、触发动作、断言与 mock 的边界。
+
+如需运行，必须使用仓库测试入口：
+
+```bash
+scripts/run_tests.sh tests/tools/test_skill_manage_batch.py -k create_plus_files_atomic
+scripts/run_tests.sh tests/agent/test_skill_commands.py -k 'uses_shared_skill_loader_for_secure_setup or supporting_file_hint_uses_file_path_argument'
+```
+
+如果测试脚本未找到你的外部虚拟环境，先阅读 [scripts/run_tests.sh](../../scripts/run_tests.sh) 的解释器选择逻辑，再调整环境；不要改用裸 `pytest` 绕过仓库的隔离规则。测试通过是该行为的证据，不代表完成了真实模型对话验证。
+
+**完成标准：** 能分清前台与后台模型的判断、`skill_manage(create)` 的写入、用户明确要求的创建、修改现有技能和 Hub 安装；对每条路径指出实际工具调用或只读代码证据。自主创建若未在真实模型对话中出现，明确保留该观察缺口，不能以 `/learn` 或直接函数调用代替。
+
+## 阶段 6：增加参考文件与真正执行的脚本
+
+### 6.1 创建参考文件
 
 在实验技能目录下新增 `references/output-format.md`：
 
@@ -331,10 +417,11 @@ skills_lab_cli chat --toolsets skills,terminal --verbose
 待办事项采用以下表格：
 | 事项 | 负责人 | 截止时间 |
 | --- | --- | --- |
-缺失信息统一填写“未说明”。
+缺失信息统一填写“待补充”。
 ```
 
 在 `SKILL.md` 正文追加：“输出前用 `skill_view` 读取 `references/output-format.md`，遵循其中格式。”
+上例沿用阶段 5.4 修改后的“待补充”；若那一步未实际完成，就让参考文件与当前主文件的缺失信息规则一致，并记录采用的版本。
 
 先直接观察附件读取：
 
@@ -349,7 +436,7 @@ PY
 
 再新开聊天调用技能，检查是否真的读取了附件。区分“主消息列出附件路径”和“附件正文已经加载”。
 
-### 5.2 添加小脚本
+### 6.2 添加小脚本
 
 在实验技能目录新增 `scripts/count_lines.py`，内容如下：
 
@@ -372,80 +459,13 @@ python "$HERMES_HOME/skills/learning/meeting-summary/scripts/count_lines.py" "$S
 
 新开聊天，输入 `/meeting-summary 请处理文件 <meeting.txt 的真实绝对路径>`。观察模型是否调用终端、路径是否正确、脚本输出是否为 `line_count=3`，以及最终摘要是否基于文件内容。
 
-### 5.3 做一次受控失败
+### 6.3 做一次受控失败
 
 将 `count_lines.py` 临时改名为 `count_lines.py.disabled`，重新调用，要求“若脚本缺失，只报告错误，不创建或修复脚本”。记录终端返回值或错误文本，再恢复文件名重试。
 
 如果模型先检查文件并发现缺失，没有执行 Python，也如实记录；不要编造一次并未发生的失败调用。
 
 **完成标准：** 能区分技能加载成功与脚本执行成功，并解释谁读取说明、谁选择命令、谁执行程序、谁解释结果。
-
-## 阶段 6：理解修改与安装生命周期
-
-### 6.1 先观察公开工具接口
-
-在 [skill_manager_tool.py](../../tools/skill_manager_tool.py) 找到 `SKILL_MANAGE_SCHEMA`、底部 `registry.register()`、`skill_manage()` 和 `_skill_manage_batch()`。
-
-先读 schema 再读 Python 函数：当前模型可见接口要求 `operations` 数组；Python 层仍保留旧的平铺参数用于兼容。这两者不能混为一谈。
-
-### 6.2 通过模型修改实验技能
-
-先把实验 `SKILL.md` 复制到 `$SKILLS_LAB/evidence/skill-before-manage.md`。在启用 `skills` 工具集的新会话中要求：
-
-```text
-请先读取 meeting-summary 技能，然后用 skill_manage 将“未说明”统一替换为“待补充”。只修改这个实验技能，不改变其他规则。请说明实际修改结果。
-```
-
-观察实际参数是否类似下面的模型工具参数示例：
-
-```json
-{
-  "operations": [
-    {
-      "name": "meeting-summary",
-      "action": "patch",
-      "old_string": "未说明",
-      "new_string": "待补充",
-      "replace_all": true
-    }
-  ]
-}
-```
-
-上例只修改主文件。阶段 5 的参考文件也含有“未说明”，因此检查模型是否另加了一项针对 `references/output-format.md` 的 patch；如果没有，记录这项遗漏，再明确要求修改参考文件。这能验证“主文件修改”和“整个技能所有文件修改”不是同一件事。
-
-比较文件差异：
-
-```bash
-diff -u "$SKILLS_LAB/evidence/skill-before-manage.md" "$HERMES_HOME/skills/learning/meeting-summary/SKILL.md"
-```
-
-`diff` 在存在差异时退出码为 1，这是正常结果。若工具返回待审批状态，按当前配置完成审批后再检查磁盘；不要把“已提交修改请求”当作“文件已经写入”。随后新开会话重新调用技能，检查修改是否被加载。
-
-### 6.3 阅读一条 Hub 安装路径
-
-主线只读代码，不要求现在安装外部技能：
-
-1. 在 [hermes_cli/skills_hub.py](../../hermes_cli/skills_hub.py) 找 `do_install()`，查看它如何取得来源、下载结果和扫描结果。
-2. 在 [tools/skills_hub.py](../../tools/skills_hub.py) 找 `UrlSource`，阅读 `SKILL.md` 与引用附属文件如何组成 bundle。
-3. 找 `quarantine_bundle()`、`install_from_quarantine()`、`HubLockFile`，记录哪些步骤落盘、锁文件记录什么，以及失败如何阻止后续安装。
-4. 回到阶段 2，回答安装后的文件为什么能被扫描。下载代码无需自行“把技能注册进模型”。
-
-画出“来源 → 下载内容 → 隔离暂存 → 扫描与策略判断 → 安装目录及锁记录 → 后续发现”的关系图，并按真实控制流修正顺序。区分这个下载 bundle 与多个技能组合成斜杠命令的 skill bundle。
-
-### 6.4 用已有测试理解行为约束
-
-从 [test_skill_commands.py](../../tests/agent/test_skill_commands.py) 选读 `test_uses_shared_skill_loader_for_secure_setup`、`test_supporting_file_hint_uses_file_path_argument`。分别写出它们的准备条件、触发动作、断言与 mock 的边界。
-
-如需运行，必须使用仓库测试入口：
-
-```bash
-scripts/run_tests.sh tests/agent/test_skill_commands.py -k 'uses_shared_skill_loader_for_secure_setup or supporting_file_hint_uses_file_path_argument'
-```
-
-如果测试脚本未找到你的外部虚拟环境，先阅读 [scripts/run_tests.sh](../../scripts/run_tests.sh) 的解释器选择逻辑，再调整环境；不要改用裸 `pytest` 绕过仓库的隔离规则。测试通过是该行为的证据，不代表完成了真实模型对话验证。
-
-**完成标准：** 能解释手动编辑、`skill_manage`、Hub 安装最终如何汇合到文件发现路径，并区分模型公开接口、内部兼容函数和用户 CLI 命令。
 
 ## 遇到问题时的排查顺序
 
@@ -466,9 +486,10 @@ scripts/run_tests.sh tests/agent/test_skill_commands.py -k 'uses_shared_skill_lo
 1. 目录中的文件经过哪些步骤，才会出现在模型可见的索引里？
 2. 显式调用与模型主动加载，哪些步骤相同，哪些不同？
 3. 技能正文、工具 schema、工具执行结果，分别是什么？
-4. 参考文件为什么不必在发现时全部加载？脚本又是谁执行的？
-5. 修改磁盘文件为何不等于修改当前会话的历史上下文？
-6. 如何证明一次失败发生在哪一层，而不是只凭模型最终回答猜测？
+4. 前台模型和后台 review 分别何时可能决定创建技能？什么证据能证明 `skill_manage(create)` 真正写入了文件？
+5. 参考文件为什么不必在发现时全部加载？脚本又是谁执行的？
+6. 修改磁盘文件为何不等于修改当前会话的历史上下文？
+7. 如何证明一次失败发生在哪一层，而不是只凭模型最终回答猜测？
 
 之后按兴趣补读条件激活、外部目录与同名优先级、技能组合、密钥配置、模板与 inline shell、缓存和 Curator。每次仍选择一个问题、一条实际路径和一个小实验。
 
