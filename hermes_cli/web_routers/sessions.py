@@ -11,20 +11,24 @@ import json
 import re
 import sqlite3
 import time
+from pathlib import Path
 from typing import Callable, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 
+from hermes_cli.session_listing import subagent_listing_scope
 from hermes_cli.web_deps import late
 from hermes_cli.web_server_gateway import _strip_session_list_rows
 from hermes_cli.web_server_sessions import _maybe_auto_archive_for_profile, _session_latest_descendant
 from hermes_cli.web_models import (
     BulkDeleteSessions, SessionImport, SessionOwnerBackfill, SessionPrune, SessionRename)
-from hermes_cli.web_routers._common import CORRUPT_STORE_DETAIL, log as _log, destructive_profile, http_failure
+from hermes_cli.web_routers._common import (
+    CORRUPT_STORE_DETAIL, corrupt_store_as_status, log as _log, destructive_profile, http_failure,
+)
 from hermes_state import is_malformed_db_error
-from hermes_state_errors import is_transient_sqlite_error
+from hermes_state_errors import StateDbReplacedError, is_transient_sqlite_error
 from hermes_state_health import STORAGE_CORRUPT, note_storage_error, storage_state
 
 list_router = APIRouter()
@@ -95,7 +99,8 @@ def _prune_sessions(body: SessionPrune):
             **{f: getattr(body, f) for f in _PRUNE_NUM_FILTERS}}
         skipped_open = db.count_open_prune_matches(**filters)
         if body.dry_run:
-            rows = db.list_prune_candidates(**filters)
+            # Same whole-lineage selection prune_sessions applies, so the preview lists what it deletes.
+            rows = db.list_prune_candidates(**filters, whole_lineages=True)
             return {
                 "ok": True,
                 "removed": 0,
@@ -160,6 +165,10 @@ def _resolve_session_id(db, session_id: str) -> Optional[str]:
                 "Sessions cannot be read until it is repaired — run "
                 "`hermes doctor` for diagnosis."),
         ) from exc
+    except StateDbReplacedError:
+        # RuntimeError family, not sqlite3: same 503 payload as the analytics reads (#110054).
+        with corrupt_store_as_status(db.db_path):
+            raise
 
 
 # ``le=100`` on limit: an unbounded limit lets one request drag every session
@@ -194,12 +203,14 @@ def get_sessions(
             # Source scoping: the desktop splits recents (exclude=cron) from
             # the cron-jobs section (source=cron) into two independent lists.
             source_list = _csv(sources)
-            exclude_list = _csv(exclude_sources)
+            include_subagents, exclude_list = subagent_listing_scope(
+                Path(db.db_path).parent, source=source or None, sources=source_list or None,
+                exclude_sources=_csv(exclude_sources) or None)
             scope = dict(
                 source=source or None, sources=source_list or None,
                 exclude_sources=exclude_list or None, cwd_prefix=(cwd_prefix or None),
                 min_message_count=min_message_count, include_archived=include_archived,
-                archived_only=archived_only)
+                archived_only=archived_only, include_subagents=include_subagents)
             sessions = db.list_sessions_rich(
                 limit=limit,
                 offset=offset,
@@ -250,6 +261,10 @@ def get_sessions(
             raise HTTPException(status_code=500, detail="Internal server error") from exc
         _log.error("GET /api/sessions: state.db at %s is corrupt: %s", db_path, exc)
         raise HTTPException(status_code=503, detail=dict(CORRUPT_STORE_DETAIL)) from exc
+    except StateDbReplacedError:
+        # RuntimeError family, not sqlite3: same 503 payload as the analytics reads (#110054).
+        with corrupt_store_as_status(_session_db_path_for_profile(profile)):
+            raise
     except Exception:
         _log.exception("GET /api/sessions failed")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -561,6 +576,14 @@ def _history_profile_home(profile):
     return get_hermes_home()
 
 
+def _session_files_dir(profile) -> Path:
+    """Transcript dir of the profile whose store a delete targets: ``SessionDB.delete_session`` only
+    unlinks the session's on-disk artifacts when handed this, and a row-only delete leaves the
+    (secret-bearing) ``session_<id>.json`` snapshots and ``request_dump_<id>_*.json`` readable after
+    the user removed the session (#55088, #60207)."""
+    return _history_profile_home(profile) / "sessions"
+
+
 def _project_for_display(messages: list, *, home=None) -> list:
     from agent.compaction_display import project_compaction_message_for_display
     from agent.context_compressor import is_compaction_summary_message
@@ -702,7 +725,7 @@ async def delete_session_endpoint(session_id: str, profile: Optional[str] = None
         sid = _resolve_session_id(db, session_id)
         if not sid:
             return {"ok": True, "already_absent": True}
-        db.delete_session(sid)
+        db.delete_session(sid, sessions_dir=_session_files_dir(profile))
         return {"ok": True}
 
     return await asyncio.to_thread(_with_db, profile, _delete, read_only=False)
@@ -802,10 +825,11 @@ async def export_session_endpoint(session_id: str, profile: Optional[str] = None
         try:
             yield _compact_json(session)[:-1] + ',"messages":['
             # Keyset pagination (id > last_seen): O(n) total over the
-            # transcript, vs OFFSET's O(n²) on huge sessions.
+            # transcript, vs OFFSET's O(n²) on huge sessions. Every row with its
+            # active/compacted flags, so re-importing restores compacted history as archived.
             last_id, first = 0, True
             while True:
-                messages = db.get_messages(sid, limit=500, after_id=last_id)
+                messages = db.get_messages(sid, limit=500, after_id=last_id, include_inactive=True)
                 for message in messages:
                     yield ("" if first else ",") + _compact_json(message)
                     first = False
