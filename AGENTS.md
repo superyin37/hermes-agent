@@ -507,6 +507,10 @@ extract, not to regex around it.
 
 ## Learning Notes Workflow
 
+For Codex guided-learning requests, read and apply the repository skill
+[guided-learning](.agents/skills/guided-learning/SKILL.md) before teaching.
+It governs teaching pace; topic plans and notes under `learning/` own progress.
+
 When following a plan under `learning/`, read `learning/AGENTS.md` before the first
 learning-related response. After each substantive learning question and answer, and before
 advancing to the next step, decide whether the exchange has lasting learning value. If it does,

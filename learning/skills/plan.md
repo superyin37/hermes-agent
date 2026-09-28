@@ -20,7 +20,7 @@
 | 5. 自主创建与生命周期 | 90～120 分钟，可分多次 | 模型何时自主判断值得创建技能，怎样写入、修改和安装？ | 判断与工具调用、文件差异、安装流程图 |
 | 6. 附件与执行 | 45～60 分钟 | 读说明和运行脚本在哪里分开？ | 文件读取、执行成功与失败记录 |
 
-不要求一天完成。每次结束前用 5 分钟填写记录：原先的猜测、看到的证据、修正后的理解、仍未解决的问题。先完成阶段 1～3，再继续后半程。
+不要求一天完成。每次结束前用 5 分钟填写记录：原先的猜测、看到的证据、修正后的理解、仍未解决的问题。每个大阶段结束时，先总结目标、实际过程、证据、结论、收获与未验证边界，再进入下一阶段。先完成阶段 1～3，再继续后半程。
 
 ## 实验约定
 
@@ -249,6 +249,7 @@ build_skill_invocation_message()
   → get_skill_commands()
   → _load_skill_payload()
       → tools.skills_tool.skill_view(..., preprocess=False)
+  → _render_skill_block()
   → _build_skill_message()
 ```
 
@@ -256,16 +257,23 @@ build_skill_invocation_message()
 
 ### 3.3 找到 CLI 的调用者
 
+**本节只回答一个问题：** 3.2 返回的技能消息字符串，怎样成为本轮对话的 `user` 消息？先看完整路径，再定位角色赋值。`conversation_history[:-1]` 只用于区分已暂存的本轮消息与传给 Agent 的旧历史，不需要在这一节追踪持久化细节。
+
 ```bash
-rg -n 'build_skill_invocation_message|_pending_input.put\(msg\)' cli.py
-rg -n '_pending_input.get|run_conversation\(' cli.py
+rg -n 'def process_command|_run_skill_slash_command|build_skill_invocation_message|_queue_skill_message|_pending_input.put' cli.py
+rg -n '_pending_input.get|_tui_process_one_input|self.chat\(' hermes_cli/cli_tui_runtime_mixin.py
+rg -n '_chat_stage_user_message|run_conversation\(' hermes_cli/cli_chat_turn_mixin.py
 ```
 
-在 [cli.py](../../cli.py) 找到实际调用而不仅是导入包装器：查看返回的 `msg` 如何放进输入队列，再追踪队列读取、对话调用和用户消息追加位置。只沿这一条路径走，不通读整个 CLI。
+从 [cli.py](../../cli.py) 的实际调用出发，而不止看导入包装器：查看返回的 `msg` 如何放进输入队列，再到 [cli_tui_runtime_mixin.py](../../hermes_cli/cli_tui_runtime_mixin.py) 追踪队列读取，最后在 [cli_chat_turn_mixin.py](../../hermes_cli/cli_chat_turn_mixin.py) 找到对话调用和用户消息追加位置。只沿这一条路径走，不通读整个 CLI。
 
 如果需要调试，在 IDE 给 `build_skill_invocation_message()` 的返回前、CLI 放入队列处和对话入口各设一个断点。使用阶段 0 的同一 Python 环境，启动模块 `hermes_cli.main`，参数为 `chat`；工作目录设为实验 `work`，环境变量设置 `HERMES_HOME` 和指向仓库的 `PYTHONPATH`。
 
 **完成标准：** 能指出消息在哪一层还是字符串、在哪一层被赋予对话角色；能说明追加本轮消息为何不同于重写旧系统提示词。不要只依据函数名字猜测消息角色。
+
+### 3.4 阶段总结
+
+在 `notes.md` 用一小节回答：本阶段做了什么，预测与实际观察怎样对应，源码补足了什么，最终能确认什么，哪些仍需模型调用或缓存证据。区分自己做过的直接函数运行、亲自读过的代码，以及助手补充的代码核对；总结完成后再进入阶段 4。
 
 ## 阶段 4：比较显式调用与模型主动加载
 
