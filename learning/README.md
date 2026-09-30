@@ -4,16 +4,16 @@
 
 ## 学习路线与进度
 
-建议先通过 Skills 建立“文件 → 上下文 → 工具调用”的认识，再学习 Tools 的执行机制、Agent Loop 的对话循环，最后理解 Memory 如何跨轮次和会话保留信息。顺序可以按实际疑问调整。
+先通过 Skills 建立“文件 → 上下文 → 工具调用”的认识，再按实际疑问展开 Tools、Agent Loop 和 Memory。当前 Skills 已完成阶段 0～4；按用户 2026-09-29 的安排，先不进入 Skills 阶段 5，另开 Memory 学习线，所需 Tools／Agent Loop 基础在途中补齐。
 
 | 顺序 | 模块 | 核心问题 | 文档入口 | 当前进度 |
 | --- | --- | --- | --- | --- |
-| 1 | Skills | 指令文件如何被发现、加载并影响执行？ | [计划](skills/plan.md) · [笔记](skills/notes.md) | 计划与记录框架已创建；实验未开始 |
+| 1 | Skills | 指令文件如何被发现、加载并影响执行？ | [计划](skills/plan.md) · [笔记](skills/notes.md) | 阶段 0～4 已完成；暂不进入 5.1 |
 | 2 | Tools | 工具如何注册、暴露给模型、接收参数并返回结果？ | [待规划页面](tools/README.md) | 待规划 |
 | 3 | Agent Loop | 用户消息、模型响应与工具结果如何构成循环？ | [待规划页面](agent-loop/README.md) | 待规划 |
-| 4 | Memory | 哪些信息被保存，何时读取，怎样进入后续上下文？ | [待规划页面](memory/README.md) | 待规划 |
+| 4 | Memory | 哪些信息被保存，何时读取，怎样进入后续上下文？ | [计划](memory/plan.md) · [笔记](memory/notes.md) | 阶段 0 已收束；1.1 隔离环境待用户执行 |
 
-当前从 [Skills 阶段 0.1：确认代码与解释器](skills/plan.md) 开始。具体实验进度以各模块的笔记为准；完成一个阶段后再同步更新这里的摘要。
+当前进入 Memory 阶段 1，下一步 1.1 建立隔离环境，核对 Python、源码导入路径与实际 home；环境准备不计作持久化实验完成。具体进度以各模块笔记的最新检查点为准；恢复 Skills 时从 5.1 的判断／写入边界预测开始。
 
 ## 目录约定
 
@@ -28,7 +28,9 @@ learning/
 ├── agent-loop/
 │   └── README.md
 └── memory/
-    └── README.md
+    ├── README.md
+    ├── plan.md
+    └── notes.md
 ```
 
 - `plan.md`：操作步骤、阅读入口、实验设计、预期现象和完成标准。
