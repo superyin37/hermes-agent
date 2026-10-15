@@ -12,6 +12,7 @@
 | 2 | Tools | 工具如何注册、暴露给模型、接收参数并返回结果？ | [待规划页面](tools/README.md) | 待规划 |
 | 3 | Agent Loop | 用户消息、模型响应与工具结果如何构成循环？ | [待规划页面](agent-loop/README.md) | 待规划 |
 | 4 | Memory | 哪些信息被保存，何时读取，怎样进入后续上下文？ | [计划](memory/plan.md) · [笔记](memory/notes.md) | 阶段 0～1 已完成；2.1～2.2 已收束；2.3 顺序追加已验证，锁内重读待读|
+| 5 | Mimir 记忆隔离插件 | `dap_mcp_link` / `dap_tool_guard` 如何借助 Hermes 的 plugin、profile、pairing 把社员的状态分开？ | [笔记](mimir-memory-isolation/notes.md) | 主题 1 已讲；主题 2～9 待讲 |
 
 当前进入 Memory 阶段 2，下一步 2.3 核对锁内重读的机制与职责；尚未验证模型实际调用。具体进度以各模块笔记的最新检查点为准；恢复 Skills 时从 5.1 的判断／写入边界预测开始。
 
@@ -27,9 +28,11 @@ learning/
 │   └── README.md
 ├── agent-loop/
 │   └── README.md
-└── memory/
-    ├── README.md
-    ├── plan.md
+├── memory/
+│   ├── README.md
+│   ├── plan.md
+│   └── notes.md
+└── mimir-memory-isolation/
     └── notes.md
 ```
 
